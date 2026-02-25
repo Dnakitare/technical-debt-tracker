@@ -31,7 +31,7 @@ export default async function ReposPage() {
           </p>
         </div>
         <a
-          href="/dashboard/repos"
+          href="/dashboard/repos/connect"
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
           Connect Repo

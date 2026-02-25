@@ -10,6 +10,13 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
 
+  // GitHub connection state
+  const [githubConnected, setGithubConnected] = useState(false)
+  const [githubUsername, setGithubUsername] = useState<string | null>(null)
+  const [githubToken, setGithubToken] = useState("")
+  const [githubLoading, setGithubLoading] = useState(false)
+  const [githubChecking, setGithubChecking] = useState(true)
+
   useEffect(() => {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -29,6 +36,22 @@ export default function SettingsPage() {
     loadProfile()
   }, [supabase])
 
+  useEffect(() => {
+    async function checkGithub() {
+      try {
+        const res = await fetch("/api/github/token")
+        const data = await res.json()
+        setGithubConnected(data.connected)
+        setGithubUsername(data.github_username)
+      } catch {
+        // ignore
+      } finally {
+        setGithubChecking(false)
+      }
+    }
+    checkGithub()
+  }, [])
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -47,6 +70,52 @@ export default function SettingsPage() {
       toast.success("Settings saved")
     }
     setLoading(false)
+  }
+
+  async function handleConnectGithub(e: React.FormEvent) {
+    e.preventDefault()
+    if (!githubToken.trim()) return
+    setGithubLoading(true)
+
+    try {
+      const res = await fetch("/api/github/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: githubToken }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to connect GitHub")
+      } else {
+        setGithubConnected(true)
+        setGithubUsername(data.github_username)
+        setGithubToken("")
+        toast.success(`Connected as ${data.github_username}`)
+      }
+    } catch {
+      toast.error("Failed to connect GitHub")
+    } finally {
+      setGithubLoading(false)
+    }
+  }
+
+  async function handleDisconnectGithub() {
+    setGithubLoading(true)
+    try {
+      const res = await fetch("/api/github/token", { method: "DELETE" })
+      if (res.ok) {
+        setGithubConnected(false)
+        setGithubUsername(null)
+        toast.success("GitHub disconnected")
+      } else {
+        toast.error("Failed to disconnect GitHub")
+      }
+    } catch {
+      toast.error("Failed to disconnect GitHub")
+    } finally {
+      setGithubLoading(false)
+    }
   }
 
   return (
@@ -109,6 +178,68 @@ export default function SettingsPage() {
           {loading ? "Saving..." : "Save Changes"}
         </button>
       </form>
+
+      {/* GitHub Connection */}
+      <div className="mt-8 max-w-lg rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          GitHub Connection
+        </h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          Connect your GitHub account to analyze repositories.
+        </p>
+
+        {githubChecking ? (
+          <p className="mt-4 text-sm text-zinc-500">Checking connection...</p>
+        ) : githubConnected ? (
+          <div className="mt-4">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" />
+              <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                Connected as {githubUsername}
+              </span>
+            </div>
+            <button
+              onClick={handleDisconnectGithub}
+              disabled={githubLoading}
+              className="mt-4 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+            >
+              {githubLoading ? "Disconnecting..." : "Disconnect"}
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleConnectGithub} className="mt-4 space-y-4">
+            <div>
+              <label
+                htmlFor="github-token"
+                className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                Personal Access Token
+              </label>
+              <input
+                id="github-token"
+                type="password"
+                value={githubToken}
+                onChange={(e) => setGithubToken(e.target.value)}
+                placeholder="ghp_..."
+                className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+              />
+              <p className="mt-1 text-xs text-zinc-500">
+                Create a token at GitHub &rarr; Settings &rarr; Developer
+                settings &rarr; Personal access tokens &rarr; Tokens (classic).
+                Select the <strong>repo</strong> and <strong>read:user</strong>{" "}
+                scopes.
+              </p>
+            </div>
+            <button
+              type="submit"
+              disabled={githubLoading || !githubToken.trim()}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {githubLoading ? "Connecting..." : "Connect GitHub"}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   )
 }

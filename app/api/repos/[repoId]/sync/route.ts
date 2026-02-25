@@ -38,8 +38,14 @@ export async function POST(
       return NextResponse.json({ error: "GitHub not connected" }, { status: 400 })
     }
 
+    // Admin client for repo status updates (bypasses RLS)
+    const adminClient = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
     // Mark as syncing
-    await supabase
+    await adminClient
       .from("repos")
       .update({ sync_status: "syncing" })
       .eq("id", repoId)
@@ -91,12 +97,6 @@ export async function POST(
         ? prAges.reduce((a, b) => a + b, 0) / prAges.length
         : null
 
-      // Insert metrics using admin client to bypass RLS
-      const adminClient = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-
       await adminClient.from("debt_metrics").upsert({
         repo_id: repoId,
         snapshot_date: new Date().toISOString().split("T")[0],
@@ -112,7 +112,7 @@ export async function POST(
       }, { onConflict: "repo_id,snapshot_date" })
 
       // Mark sync complete
-      await supabase
+      await adminClient
         .from("repos")
         .update({
           sync_status: "completed",
@@ -123,7 +123,7 @@ export async function POST(
 
       return NextResponse.json({ success: true, summary })
     } catch (syncError) {
-      await supabase
+      await adminClient
         .from("repos")
         .update({
           sync_status: "failed",

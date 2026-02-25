@@ -18,7 +18,7 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -33,8 +33,12 @@ export default function RegisterPage() {
       return
     }
 
-    toast.success("Check your email for the confirmation link!")
-    setLoading(false)
+    if (data.session) {
+      window.location.href = "/dashboard"
+    } else {
+      toast.success("Check your email for the confirmation link!")
+      setLoading(false)
+    }
   }
 
   async function handleGitHubLogin() {
@@ -42,6 +46,7 @@ export default function RegisterPage() {
       provider: "github",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: "repo read:user",
       },
     })
 

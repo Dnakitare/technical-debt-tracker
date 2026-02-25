@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
@@ -26,8 +27,26 @@ export async function GET(request: Request) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // Capture GitHub provider token if available
+      const providerToken = data.session?.provider_token
+      if (providerToken && data.session?.user) {
+        const adminClient = createAdminClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+        const githubUsername =
+          data.session.user.user_metadata?.user_name ?? null
+        await adminClient
+          .from("users")
+          .update({
+            github_token: providerToken,
+            github_username: githubUsername,
+          })
+          .eq("id", data.session.user.id)
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

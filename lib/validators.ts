@@ -1,13 +1,13 @@
 import { z } from "zod"
 
 export const connectRepoSchema = z.object({
-  githubRepoId: z.number(),
-  githubOwner: z.string().min(1),
-  githubName: z.string().min(1),
-  githubFullName: z.string().min(1),
-  githubUrl: z.string().url(),
-  defaultBranch: z.string().default("main"),
-  isPrivate: z.boolean().default(false),
+  github_repo_id: z.number(),
+  github_owner: z.string().min(1),
+  github_name: z.string().min(1),
+  github_full_name: z.string().min(1),
+  github_url: z.string().url(),
+  default_branch: z.string().default("main"),
+  is_private: z.boolean().default(false),
   language: z.string().nullable().default(null),
 })
 
