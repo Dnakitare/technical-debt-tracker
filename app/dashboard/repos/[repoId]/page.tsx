@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import Link from "next/link"
@@ -7,6 +8,22 @@ import { SyncButton } from "@/components/repos/sync-button"
 import { PriorityBreakdownChart } from "@/components/repos/priority-breakdown-chart"
 import { RepoTrendChart } from "@/components/repos/repo-trend-chart"
 import { DeleteRepoButton } from "@/components/repos/delete-repo-button"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ repoId: string }>
+}): Promise<Metadata> {
+  const { repoId } = await params
+  const supabase = await createClient()
+  const { data: repo } = await supabase
+    .from("repositories")
+    .select("full_name")
+    .eq("id", repoId)
+    .single()
+
+  return { title: repo?.full_name ?? "Repository" }
+}
 
 export default async function RepoDetailPage({
   params,

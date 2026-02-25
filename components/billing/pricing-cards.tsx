@@ -1,37 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { PLANS, type PlanKey } from "@/lib/constants"
+import { PLANS, PLAN_FEATURES, type PlanKey } from "@/lib/constants"
 import { Check } from "lucide-react"
 import { toast } from "sonner"
-
-const features: Record<PlanKey, string[]> = {
-  free: ["1 repository", "1 team member", "Daily sync", "Basic dashboard"],
-  starter: [
-    "5 repositories",
-    "5 team members",
-    "Hourly sync",
-    "Full dashboard",
-    "Email support",
-  ],
-  pro: [
-    "25 repositories",
-    "25 team members",
-    "Real-time sync",
-    "Full dashboard",
-    "Priority support",
-    "Export reports",
-  ],
-  enterprise: [
-    "Unlimited repositories",
-    "Unlimited team members",
-    "Real-time sync",
-    "Full dashboard",
-    "Dedicated support",
-    "Export reports",
-    "Custom integrations",
-  ],
-}
 
 export function PricingCards({
   currentPlan,
@@ -115,7 +87,7 @@ export function PricingCards({
                 )}
               </p>
               <ul className="mt-6 space-y-3">
-                {features[key].map((feature) => (
+                {PLAN_FEATURES[key].map((feature) => (
                   <li
                     key={feature}
                     className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400"

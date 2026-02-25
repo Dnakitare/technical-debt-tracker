@@ -1,8 +1,11 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { GitBranch, ExternalLink } from "lucide-react"
 import { formatRelativeTime } from "@/lib/utils"
 import { SyncButton } from "@/components/repos/sync-button"
+
+export const metadata: Metadata = { title: "Repositories" }
 
 export default async function ReposPage() {
   const supabase = await createClient()

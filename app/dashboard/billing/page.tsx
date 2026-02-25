@@ -1,6 +1,9 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { PLANS } from "@/lib/constants"
 import { PricingCards } from "@/components/billing/pricing-cards"
+
+export const metadata: Metadata = { title: "Billing" }
 
 export default async function BillingPage() {
   const supabase = await createClient()

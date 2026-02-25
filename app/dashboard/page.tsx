@@ -1,8 +1,11 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { formatCurrency, formatRelativeTime } from "@/lib/utils"
 import { BarChart3, TrendingDown, AlertTriangle, Clock, ListChecks, GitPullRequest } from "lucide-react"
 import { DebtChart } from "@/components/dashboard/debt-chart"
+
+export const metadata: Metadata = { title: "Dashboard" }
 import { PriorityChart } from "@/components/dashboard/priority-chart"
 
 export default async function DashboardPage() {

@@ -1,8 +1,11 @@
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { Users, Mail } from "lucide-react"
 import { InviteMemberForm } from "@/components/team/invite-member-form"
 import { RemoveMemberButton } from "@/components/team/remove-member-button"
 import { CancelInviteButton } from "@/components/team/cancel-invite-button"
+
+export const metadata: Metadata = { title: "Team" }
 
 export default async function TeamPage() {
   const supabase = await createClient()
