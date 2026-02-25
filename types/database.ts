@@ -182,6 +182,38 @@ export interface Database {
           updated_at?: string
         }
       }
+      team_invites: {
+        Row: {
+          id: string
+          team_id: string
+          email: string
+          role: "admin" | "member" | "viewer"
+          invited_by: string
+          status: "pending" | "accepted" | "declined"
+          created_at: string
+          expires_at: string
+        }
+        Insert: {
+          id?: string
+          team_id: string
+          email: string
+          role?: "admin" | "member" | "viewer"
+          invited_by: string
+          status?: "pending" | "accepted" | "declined"
+          created_at?: string
+          expires_at?: string
+        }
+        Update: {
+          id?: string
+          team_id?: string
+          email?: string
+          role?: "admin" | "member" | "viewer"
+          invited_by?: string
+          status?: "pending" | "accepted" | "declined"
+          created_at?: string
+          expires_at?: string
+        }
+      }
       debt_metrics: {
         Row: {
           id: string

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
-import { GitBranch, RefreshCw, ExternalLink } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import Link from "next/link"
+import { GitBranch, ExternalLink } from "lucide-react"
+import { formatRelativeTime } from "@/lib/utils"
 import { SyncButton } from "@/components/repos/sync-button"
 
 export default async function ReposPage() {
@@ -49,9 +50,12 @@ export default async function ReposPage() {
                 <GitBranch className="h-8 w-8 text-zinc-400" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                    <Link
+                      href={`/dashboard/repos/${repo.id}`}
+                      className="font-semibold text-zinc-900 hover:text-blue-600 dark:text-zinc-50 dark:hover:text-blue-400"
+                    >
                       {repo.github_full_name}
-                    </h3>
+                    </Link>
                     <a
                       href={repo.github_url}
                       target="_blank"
@@ -78,8 +82,7 @@ export default async function ReposPage() {
                     </span>
                     {repo.last_synced_at && (
                       <span>
-                        Last synced:{" "}
-                        {new Date(repo.last_synced_at).toLocaleDateString()}
+                        Synced {formatRelativeTime(repo.last_synced_at)}
                       </span>
                     )}
                   </div>

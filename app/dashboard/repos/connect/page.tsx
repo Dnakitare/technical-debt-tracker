@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ArrowLeft, Search, Lock, Globe, Star } from "lucide-react"
 import { toast } from "sonner"
 
@@ -29,6 +30,7 @@ export default function ConnectRepoPage() {
   const [search, setSearch] = useState("")
   const [connecting, setConnecting] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     async function load() {
@@ -93,6 +95,7 @@ export default function ConnectRepoPage() {
       } else {
         setConnectedIds((prev) => new Set([...prev, repo.id]))
         toast.success(`Connected ${repo.full_name}`)
+        router.refresh()
       }
     } catch {
       toast.error("Failed to connect repo")
