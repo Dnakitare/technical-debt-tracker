@@ -1,12 +1,13 @@
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 
-type RateLimitTier = "api" | "auth" | "sync"
+type RateLimitTier = "api" | "auth" | "sync" | "webhook"
 
 const TIER_CONFIG: Record<RateLimitTier, { requests: number; window: `${number} ${"ms" | "s" | "m" | "h" | "d"}` }> = {
   api: { requests: 60, window: "1 m" },
   auth: { requests: 10, window: "1 m" },
   sync: { requests: 5, window: "1 m" },
+  webhook: { requests: 120, window: "1 m" },
 }
 
 function hasRedisConfig(): boolean {

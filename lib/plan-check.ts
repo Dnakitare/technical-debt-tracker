@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
-import type { PlanKey } from "@/lib/constants"
+import { PLANS, type PlanKey } from "@/lib/constants"
 export { canExport } from "@/lib/constants"
+
+const validPlans = Object.keys(PLANS) as PlanKey[]
+
+function isValidPlan(value: unknown): value is PlanKey {
+  return typeof value === "string" && validPlans.includes(value as PlanKey)
+}
 
 export async function getTeamPlan(userId: string): Promise<{ plan: PlanKey; teamId: string } | null> {
   const supabase = await createClient()
@@ -21,5 +27,6 @@ export async function getTeamPlan(userId: string): Promise<{ plan: PlanKey; team
 
   if (!team) return null
 
-  return { plan: team.plan as PlanKey, teamId: profile.current_team_id }
+  const plan = isValidPlan(team.plan) ? team.plan : "free"
+  return { plan, teamId: profile.current_team_id }
 }

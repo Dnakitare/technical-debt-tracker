@@ -1,8 +1,9 @@
 import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { verifySlackSignature, buildDebtSummaryBlocks } from "@/lib/slack"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
 
-export async function POST(request: Request) {
+async function handlePost(request: Request) {
   try {
     const body = await request.text()
     const timestamp = request.headers.get("x-slack-request-timestamp") ?? ""
@@ -98,3 +99,5 @@ export async function POST(request: Request) {
     })
   }
 }
+
+export const POST = withRateLimit(handlePost, "webhook")

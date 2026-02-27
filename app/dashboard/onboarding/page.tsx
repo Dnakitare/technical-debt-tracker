@@ -56,15 +56,18 @@ export default function OnboardingPage() {
   const [syncProgress, setSyncProgress] = useState<Record<string, "pending" | "syncing" | "done" | "error">>({})
 
   useEffect(() => {
+    const controller = new AbortController()
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user || controller.signal.aborted) return
 
       const { data: profile } = await supabase
         .from("users")
         .select("current_team_id")
         .eq("id", user.id)
         .single()
+
+      if (controller.signal.aborted) return
 
       if (profile?.current_team_id) {
         setTeamId(profile.current_team_id)
@@ -73,22 +76,23 @@ export default function OnboardingPage() {
           .select("name")
           .eq("id", profile.current_team_id)
           .single()
-        if (team) setTeamName(team.name)
+        if (team && !controller.signal.aborted) setTeamName(team.name)
       }
 
       // Check GitHub
       try {
-        const res = await fetch("/api/github/token")
+        const res = await fetch("/api/github/token", { signal: controller.signal })
         const data = await res.json()
         setGithubConnected(data.connected)
         setGithubUsername(data.github_username)
-      } catch {
-        // ignore
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return
       } finally {
-        setGithubChecking(false)
+        if (!controller.signal.aborted) setGithubChecking(false)
       }
     }
     init()
+    return () => controller.abort()
   }, [supabase])
 
   async function handleUpdateTeamName() {

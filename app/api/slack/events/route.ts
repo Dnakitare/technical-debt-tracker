@@ -1,7 +1,8 @@
 import { verifySlackSignature } from "@/lib/slack"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
 
-export async function POST(request: Request) {
+async function handlePost(request: Request) {
   try {
     const body = await request.text()
     const payload = JSON.parse(body)
@@ -27,3 +28,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export const POST = withRateLimit(handlePost, "webhook")

@@ -1,13 +1,14 @@
 import { getStripe } from "@/lib/stripe"
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST(request: Request) {
+async function handlePost(request: Request) {
   const body = await request.text()
   const signature = request.headers.get("stripe-signature")
 
@@ -130,3 +131,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true })
 }
+
+export const POST = withRateLimit(handlePost, "webhook")

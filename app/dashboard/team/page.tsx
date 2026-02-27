@@ -5,6 +5,18 @@ import { InviteMemberForm } from "@/components/team/invite-member-form"
 import { RemoveMemberButton } from "@/components/team/remove-member-button"
 import { CancelInviteButton } from "@/components/team/cancel-invite-button"
 
+interface MemberWithUser {
+  id: string
+  user_id: string
+  role: string
+  joined_at: string | null
+  users: {
+    email: string
+    full_name: string | null
+    avatar_url: string | null
+  } | null
+}
+
 export const metadata: Metadata = { title: "Team" }
 
 export default async function TeamPage() {
@@ -36,7 +48,8 @@ export default async function TeamPage() {
         .from("team_members")
         .select("*, users(email, full_name, avatar_url)")
         .eq("team_id", teamId)
-    : { data: [] }
+        .returns<MemberWithUser[]>()
+    : { data: [] as MemberWithUser[] }
 
   // Fetch pending invites
   const { data: invites } = teamId
@@ -97,14 +110,14 @@ export default async function TeamPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                        {(member.users as { full_name: string | null })?.full_name?.[0] ?? "?"}
+                        {member.users?.full_name?.[0] ?? "?"}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {(member.users as { full_name: string | null })?.full_name ?? "Unknown"}
+                          {member.users?.full_name ?? "Unknown"}
                         </p>
                         <p className="text-xs text-zinc-500">
-                          {(member.users as { email: string })?.email}
+                          {member.users?.email}
                         </p>
                       </div>
                     </div>

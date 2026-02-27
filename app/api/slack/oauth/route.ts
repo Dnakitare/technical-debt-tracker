@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
 
-export async function GET(request: Request) {
+async function handleGet(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get("code")
@@ -88,3 +89,5 @@ export async function GET(request: Request) {
     )
   }
 }
+
+export const GET = withRateLimit(handleGet, "auth")

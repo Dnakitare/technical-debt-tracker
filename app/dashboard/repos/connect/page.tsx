@@ -33,11 +33,12 @@ export default function ConnectRepoPage() {
   const router = useRouter()
 
   useEffect(() => {
+    const controller = new AbortController()
     async function load() {
       try {
         const [reposRes, connectedRes] = await Promise.all([
-          fetch("/api/github/repos"),
-          fetch("/api/repos"),
+          fetch("/api/github/repos", { signal: controller.signal }),
+          fetch("/api/repos", { signal: controller.signal }),
         ])
 
         if (!reposRes.ok) {
@@ -55,13 +56,15 @@ export default function ConnectRepoPage() {
             new Set(connectedData.map((r) => r.github_repo_id))
           )
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return
         setError("Failed to load repositories")
       } finally {
         setLoading(false)
       }
     }
     load()
+    return () => controller.abort()
   }, [])
 
   const filtered = repos.filter(
@@ -123,7 +126,7 @@ export default function ConnectRepoPage() {
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-sm text-zinc-500">
+        <div className="py-12 text-center text-sm text-zinc-500" aria-live="polite">
           Loading repositories...
         </div>
       ) : error ? (
