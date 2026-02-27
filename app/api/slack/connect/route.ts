@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { SLACK_SCOPES } from "@/lib/constants"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
 
@@ -18,7 +19,7 @@ async function handleGET() {
     }
 
     const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/slack/oauth`
-    const scopes = "chat:write,commands,incoming-webhook"
+    const scopes = SLACK_SCOPES
     const state = user.id // Use user ID as state for verification
 
     const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
@@ -49,10 +50,7 @@ async function handleDELETE() {
       return NextResponse.json({ error: "No team selected" }, { status: 400 })
     }
 
-    const adminClient = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const adminClient = createAdminClient()
 
     const { error } = await adminClient
       .from("teams")

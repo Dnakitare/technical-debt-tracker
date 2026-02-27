@@ -1,15 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { inviteMemberSchema } from "@/lib/validators"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
-
-function getAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
 
 async function handlePOST(
   request: Request,
@@ -66,7 +59,7 @@ async function handlePOST(
     }
 
     // Look up user by email using admin client
-    const admin = getAdminClient()
+    const admin = createAdminClient()
     const { data: existingUser } = await admin
       .from("users")
       .select("id")

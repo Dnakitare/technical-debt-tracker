@@ -1,12 +1,9 @@
 import { getStripe } from "@/lib/stripe"
-import { createClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { PLANS, type PlanKey } from "@/lib/constants"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import type Stripe from "stripe"
 
 async function handlePost(request: Request) {
   const body = await request.text()
@@ -17,6 +14,7 @@ async function handlePost(request: Request) {
   }
 
   const stripe = getStripe()
+  const supabaseAdmin = createAdminClient()
 
   let event
   try {
@@ -41,23 +39,13 @@ async function handlePost(request: Request) {
         const priceId = subscription.items.data[0]?.price.id
         const periodEnd = subscription.items.data[0]?.current_period_end
 
-        let plan: string = "free"
-        let maxRepos = 1
-        let maxMembers = 1
-
-        if (priceId === process.env.STRIPE_STARTER_PRICE_ID) {
-          plan = "starter"
-          maxRepos = 5
-          maxMembers = 5
-        } else if (priceId === process.env.STRIPE_PRO_PRICE_ID) {
-          plan = "pro"
-          maxRepos = 25
-          maxMembers = 25
-        } else if (priceId === process.env.STRIPE_ENTERPRISE_PRICE_ID) {
-          plan = "enterprise"
-          maxRepos = -1
-          maxMembers = -1
-        }
+        const matchedPlan = (Object.entries(PLANS) as [PlanKey, typeof PLANS[PlanKey]][]).find(
+          ([, config]) => config.stripePriceId === priceId
+        )
+        const plan = matchedPlan?.[0] ?? "free"
+        const planConfig = PLANS[plan]
+        const maxRepos = planConfig.maxRepos
+        const maxMembers = planConfig.maxMembers
 
         await supabaseAdmin
           .from("teams")
@@ -108,17 +96,17 @@ async function handlePost(request: Request) {
           plan: "free",
           subscription_status: "canceled",
           stripe_subscription_id: null,
-          max_repos: 1,
-          max_members: 1,
+          max_repos: PLANS.free.maxRepos,
+          max_members: PLANS.free.maxMembers,
         })
         .eq("stripe_subscription_id", subscription.id)
       break
     }
 
     case "invoice.payment_failed": {
-      const invoice = event.data.object
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const subId = (invoice as any).subscription as string | null
+      const invoice = event.data.object as Stripe.Invoice
+      const sub = invoice.parent?.subscription_details?.subscription ?? null
+      const subId = typeof sub === "string" ? sub : sub?.id ?? null
       if (subId) {
         await supabaseAdmin
           .from("teams")

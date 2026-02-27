@@ -1,4 +1,5 @@
 import { Octokit } from "octokit"
+import { GITHUB_API_PAGE_SIZE, DEBT_KEYWORDS } from "./constants"
 
 export function createOctokit(token: string) {
   return new Octokit({ auth: token })
@@ -8,7 +9,7 @@ export async function fetchUserRepos(token: string) {
   const octokit = createOctokit(token)
   const { data } = await octokit.rest.repos.listForAuthenticatedUser({
     sort: "updated",
-    per_page: 100,
+    per_page: GITHUB_API_PAGE_SIZE,
   })
   return data
 }
@@ -25,7 +26,7 @@ export async function fetchRepoIssues(
     repo,
     state: "open",
     labels: labels?.join(","),
-    per_page: 100,
+    per_page: GITHUB_API_PAGE_SIZE,
   })
   return data
 }
@@ -40,7 +41,7 @@ export async function fetchRepoPullRequests(
     owner,
     repo,
     state: "open",
-    per_page: 100,
+    per_page: GITHUB_API_PAGE_SIZE,
   })
   return data
 }
@@ -51,7 +52,7 @@ export async function searchCodeForDebt(
   repo: string
 ) {
   const octokit = createOctokit(token)
-  const queries = ["TODO", "FIXME", "HACK", "WORKAROUND", "TECHNICAL DEBT"]
+  const queries = DEBT_KEYWORDS
   let totalCount = 0
 
   for (const query of queries) {

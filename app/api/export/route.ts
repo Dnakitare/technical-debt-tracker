@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { getTeamPlan, canExport } from "@/lib/plan-check"
+import { TEAM_EXPORT_LIMIT, CSV_HEADER } from "@/lib/constants"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
 
@@ -34,13 +35,13 @@ async function handleGET() {
       .select("*")
       .in("repo_id", repoIds)
       .order("snapshot_date", { ascending: false })
-      .limit(1000)
+      .limit(TEAM_EXPORT_LIMIT)
 
     if (!metrics || metrics.length === 0) {
       return NextResponse.json({ error: "No metrics to export" }, { status: 404 })
     }
 
-    const header = "date,repository,total_issues,critical,high,medium,low,estimated_hours,estimated_cost_usd,todo_count,avg_pr_age_days"
+    const header = CSV_HEADER
     const rows = metrics.map((m) =>
       [
         m.snapshot_date,

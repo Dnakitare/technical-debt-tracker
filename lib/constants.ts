@@ -61,6 +61,19 @@ export const PLAN_FEATURES: Record<PlanKey, string[]> = {
 
 export const DEFAULT_HOURLY_RATE = 100
 
+export const GITHUB_API_PAGE_SIZE = 100
+export const METRICS_HISTORY_LIMIT = 30
+export const REPO_EXPORT_LIMIT = 365
+export const TEAM_EXPORT_LIMIT = 1000
+export const MS_PER_DAY = 1000 * 60 * 60 * 24
+
+export const DEBT_KEYWORDS = ["TODO", "FIXME", "HACK", "WORKAROUND", "TECHNICAL DEBT"] as const
+
+export const CSV_HEADER = "date,repository,total_issues,critical,high,medium,low,estimated_hours,estimated_cost_usd,todo_count,avg_pr_age_days"
+
+export const SLACK_SCOPES = "chat:write,commands,incoming-webhook"
+export const SLACK_REQUEST_TIMEOUT_SECONDS = 300
+
 export const EXPORT_ENABLED_PLANS: readonly PlanKey[] = ["pro", "enterprise"] as const
 
 export function canExport(plan: PlanKey): boolean {

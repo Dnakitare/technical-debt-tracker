@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
 
@@ -51,10 +51,7 @@ async function handleGet(request: Request) {
     }
 
     // Get user's team
-    const adminClient = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const adminClient = createAdminClient()
 
     const { data: profile } = await adminClient
       .from("users")

@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
+import { MS_PER_DAY } from "@/lib/constants"
 import { fetchRepoIssues, fetchRepoPullRequests, searchCodeForDebt } from "@/lib/github"
 import { classifyPriority, estimateHours, calculateDebtCost } from "@/lib/debt-engine"
 import type { DebtItem } from "@/lib/debt-engine"
-import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
 import { createSlackClient, buildDebtSummaryBlocks } from "@/lib/slack"
@@ -42,10 +43,7 @@ async function handlePOST(
     }
 
     // Admin client for repo status updates (bypasses RLS)
-    const adminClient = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const adminClient = createAdminClient()
 
     // Mark as syncing
     await adminClient
@@ -94,7 +92,7 @@ async function handlePOST(
       const now = new Date()
       const prAges = prs.map((pr) => {
         const created = new Date(pr.created_at)
-        return (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
+        return (now.getTime() - created.getTime()) / MS_PER_DAY
       })
       const avgPrAge = prAges.length > 0
         ? prAges.reduce((a, b) => a + b, 0) / prAges.length

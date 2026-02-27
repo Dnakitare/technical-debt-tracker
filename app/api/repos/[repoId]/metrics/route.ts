@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { METRICS_HISTORY_LIMIT } from "@/lib/constants"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
 
@@ -21,7 +22,7 @@ async function handleGET(
       .select("*")
       .eq("repo_id", repoId)
       .order("snapshot_date", { ascending: false })
-      .limit(30)
+      .limit(METRICS_HISTORY_LIMIT)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

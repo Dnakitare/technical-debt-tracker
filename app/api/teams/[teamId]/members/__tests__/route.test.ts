@@ -8,8 +8,8 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue(mockSupabase),
 }))
 
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: vi.fn().mockReturnValue(mockAdminClient),
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: vi.fn().mockReturnValue(mockAdminClient),
 }))
 
 const { POST, DELETE } = await import("@/app/api/teams/[teamId]/members/route")

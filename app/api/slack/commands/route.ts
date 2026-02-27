@@ -1,4 +1,4 @@
-import { createClient as createAdminClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { verifySlackSignature, buildDebtSummaryBlocks } from "@/lib/slack"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
@@ -18,10 +18,7 @@ async function handlePost(request: Request) {
     const commandText = params.get("text")?.trim().toLowerCase() ?? ""
     const teamId = params.get("team_id") ?? ""
 
-    const adminClient = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const adminClient = createAdminClient()
 
     // Find the DebtLens team linked to this Slack team
     const { data: team } = await adminClient

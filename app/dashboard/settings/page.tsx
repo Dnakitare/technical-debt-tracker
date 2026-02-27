@@ -90,8 +90,8 @@ export default function SettingsPage() {
         const data = await res.json()
         setGithubConnected(data.connected)
         setGithubUsername(data.github_username)
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error("GitHub connection check failed:", err)
       } finally {
         setGithubChecking(false)
       }

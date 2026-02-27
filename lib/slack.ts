@@ -1,5 +1,6 @@
 import { WebClient } from "@slack/web-api"
 import { timingSafeEqual, createHmac } from "crypto"
+import { SLACK_REQUEST_TIMEOUT_SECONDS } from "./constants"
 
 export function createSlackClient(token: string): WebClient {
   return new WebClient(token)
@@ -11,7 +12,7 @@ export function verifySlackSignature(
   timestamp: string,
   body: string
 ): boolean {
-  const fiveMinutesAgo = Math.floor(Date.now() / 1000) - 60 * 5
+  const fiveMinutesAgo = Math.floor(Date.now() / 1000) - SLACK_REQUEST_TIMEOUT_SECONDS
   if (parseInt(timestamp) < fiveMinutesAgo) {
     return false
   }
