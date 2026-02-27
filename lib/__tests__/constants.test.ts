@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { PLANS, PLAN_FEATURES, DEFAULT_HOURLY_RATE } from "../constants"
+import { PLANS, PLAN_FEATURES, DEFAULT_HOURLY_RATE, EXPORT_ENABLED_PLANS, canExport } from "../constants"
 import type { PlanKey } from "../constants"
 
 describe("PLANS", () => {
@@ -65,5 +65,24 @@ describe("PLAN_FEATURES", () => {
 describe("DEFAULT_HOURLY_RATE", () => {
   it("is 100", () => {
     expect(DEFAULT_HOURLY_RATE).toBe(100)
+  })
+})
+
+describe("canExport", () => {
+  it("returns true for pro and enterprise", () => {
+    expect(canExport("pro")).toBe(true)
+    expect(canExport("enterprise")).toBe(true)
+  })
+
+  it("returns false for free and starter", () => {
+    expect(canExport("free")).toBe(false)
+    expect(canExport("starter")).toBe(false)
+  })
+
+  it("EXPORT_ENABLED_PLANS matches canExport behavior", () => {
+    const planKeys: PlanKey[] = ["free", "starter", "pro", "enterprise"]
+    for (const plan of planKeys) {
+      expect(canExport(plan)).toBe(EXPORT_ENABLED_PLANS.includes(plan))
+    }
   })
 })

@@ -60,8 +60,8 @@ export async function searchCodeForDebt(
         q: `${query}+repo:${owner}/${repo}`,
       })
       totalCount += data.total_count
-    } catch {
-      // Rate limit or search API error — skip this query
+    } catch (error) {
+      console.error(`GitHub search failed for "${query}" in ${owner}/${repo}:`, error)
     }
   }
 

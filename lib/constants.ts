@@ -60,3 +60,9 @@ export const PLAN_FEATURES: Record<PlanKey, string[]> = {
 }
 
 export const DEFAULT_HOURLY_RATE = 100
+
+export const EXPORT_ENABLED_PLANS: readonly PlanKey[] = ["pro", "enterprise"] as const
+
+export function canExport(plan: PlanKey): boolean {
+  return EXPORT_ENABLED_PLANS.includes(plan)
+}

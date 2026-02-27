@@ -151,13 +151,25 @@ async function handleDELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Check caller is admin/owner first
+    const { data: callerMember } = await supabase
+      .from("team_members")
+      .select("role")
+      .eq("team_id", teamId)
+      .eq("user_id", user.id)
+      .single()
+
+    if (!callerMember || !["owner", "admin"].includes(callerMember.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     const { userId } = await request.json()
 
     if (!userId) {
       return NextResponse.json({ error: "userId required" }, { status: 400 })
     }
 
-    // Check if target is owner
+    // Check target member exists and is not the owner
     const { data: targetMember } = await supabase
       .from("team_members")
       .select("role")
@@ -171,18 +183,6 @@ async function handleDELETE(
 
     if (targetMember.role === "owner") {
       return NextResponse.json({ error: "Cannot remove the team owner" }, { status: 403 })
-    }
-
-    // Check caller is admin/owner
-    const { data: callerMember } = await supabase
-      .from("team_members")
-      .select("role")
-      .eq("team_id", teamId)
-      .eq("user_id", user.id)
-      .single()
-
-    if (!callerMember || !["owner", "admin"].includes(callerMember.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const { error } = await supabase

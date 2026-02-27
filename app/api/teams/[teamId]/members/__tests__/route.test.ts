@@ -207,6 +207,16 @@ describe("DELETE /api/teams/[teamId]/members", () => {
   })
 
   it("returns 400 when userId missing", async () => {
+    // Caller check -> admin (authorized)
+    mockSupabase.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: { role: "admin" },
+        error: null,
+      }),
+    }))
+
     const res = await DELETE(
       new Request("http://localhost/api/teams/team-1/members", {
         method: "DELETE",
@@ -222,15 +232,30 @@ describe("DELETE /api/teams/[teamId]/members", () => {
   })
 
   it("returns 403 when trying to remove team owner", async () => {
-    // First call: target member lookup -> owner role
-    mockSupabase.from.mockImplementationOnce(() => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({
-        data: { role: "owner" },
-        error: null,
-      }),
-    }))
+    let callCount = 0
+    mockSupabase.from.mockImplementation(() => {
+      callCount++
+      if (callCount === 1) {
+        // caller check -> owner (authorized)
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: { role: "owner" },
+            error: null,
+          }),
+        }
+      }
+      // target member -> owner role
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: { role: "owner" },
+          error: null,
+        }),
+      }
+    })
 
     const res = await DELETE(
       new Request("http://localhost/api/teams/team-1/members", {
@@ -247,30 +272,15 @@ describe("DELETE /api/teams/[teamId]/members", () => {
   })
 
   it("returns 403 when caller is not admin/owner", async () => {
-    let callCount = 0
-    mockSupabase.from.mockImplementation(() => {
-      callCount++
-      if (callCount === 1) {
-        // target member -> member role
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({
-            data: { role: "member" },
-            error: null,
-          }),
-        }
-      }
-      // caller check -> viewer (not admin/owner)
-      return {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({
-          data: { role: "viewer" },
-          error: null,
-        }),
-      }
-    })
+    // First call: caller check -> viewer (not admin/owner)
+    mockSupabase.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: { role: "viewer" },
+        error: null,
+      }),
+    }))
 
     const res = await DELETE(
       new Request("http://localhost/api/teams/team-1/members", {
@@ -291,23 +301,23 @@ describe("DELETE /api/teams/[teamId]/members", () => {
     mockSupabase.from.mockImplementation(() => {
       callCount++
       if (callCount === 1) {
-        // target member -> member role
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({
-            data: { role: "member" },
-            error: null,
-          }),
-        }
-      }
-      if (callCount === 2) {
         // caller check -> admin
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValue({
             data: { role: "admin" },
+            error: null,
+          }),
+        }
+      }
+      if (callCount === 2) {
+        // target member -> member role
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: { role: "member" },
             error: null,
           }),
         }

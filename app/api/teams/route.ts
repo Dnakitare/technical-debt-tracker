@@ -60,11 +60,17 @@ async function handlePOST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    await supabase.from("team_members").insert({
+    const { error: memberError } = await supabase.from("team_members").insert({
       team_id: team.id,
       user_id: user.id,
       role: "owner",
     })
+
+    if (memberError) {
+      // Clean up orphaned team
+      await supabase.from("teams").delete().eq("id", team.id)
+      return NextResponse.json({ error: "Failed to create team membership" }, { status: 500 })
+    }
 
     return NextResponse.json(team, { status: 201 })
   } catch (error) {
