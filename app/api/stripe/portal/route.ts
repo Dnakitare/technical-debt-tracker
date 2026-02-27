@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { getStripe } from "@/lib/stripe"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
 
-export async function POST() {
+async function handlePOST() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -33,3 +34,5 @@ export async function POST() {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export const POST = withRateLimit(handlePOST, "auth")

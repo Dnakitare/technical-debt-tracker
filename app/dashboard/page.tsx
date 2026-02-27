@@ -4,6 +4,8 @@ import Link from "next/link"
 import { formatCurrency, formatRelativeTime } from "@/lib/utils"
 import { BarChart3, TrendingDown, AlertTriangle, Clock, ListChecks, GitPullRequest } from "lucide-react"
 import { DebtChart } from "@/components/dashboard/debt-chart"
+import { ExportButton } from "@/components/repos/export-button"
+import type { PlanKey } from "@/lib/constants"
 
 export const metadata: Metadata = { title: "Dashboard" }
 import { PriorityChart } from "@/components/dashboard/priority-chart"
@@ -17,6 +19,14 @@ export default async function DashboardPage() {
     .select("current_team_id, hourly_rate")
     .eq("id", user!.id)
     .single()
+
+  const { data: teamData } = await supabase
+    .from("teams")
+    .select("plan")
+    .eq("id", profile?.current_team_id ?? "")
+    .single()
+
+  const plan = (teamData?.plan ?? "free") as PlanKey
 
   const { data: repos } = await supabase
     .from("repos")
@@ -116,13 +126,16 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Overview of your technical debt across {repos?.length ?? 0} repositories
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Overview of your technical debt across {repos?.length ?? 0} repositories
+          </p>
+        </div>
+        <ExportButton plan={plan} />
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

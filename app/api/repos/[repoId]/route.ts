@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
 
-export async function GET(
+async function handleGET(
   _request: Request,
-  { params }: { params: Promise<{ repoId: string }> }
+  context: unknown
 ) {
+  const { params } = context as { params: Promise<{ repoId: string }> }
   try {
     const { repoId } = await params
     const supabase = await createClient()
@@ -31,10 +33,11 @@ export async function GET(
   }
 }
 
-export async function DELETE(
+async function handleDELETE(
   _request: Request,
-  { params }: { params: Promise<{ repoId: string }> }
+  context: unknown
 ) {
+  const { params } = context as { params: Promise<{ repoId: string }> }
   try {
     const { repoId } = await params
     const supabase = await createClient()
@@ -59,3 +62,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export const GET = withRateLimit(handleGET, "api")
+export const DELETE = withRateLimit(handleDELETE, "api")

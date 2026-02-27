@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { fetchUserRepos } from "@/lib/github"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
 
-export async function GET() {
+async function handleGET() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -42,3 +43,5 @@ export async function GET() {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export const GET = withRateLimit(handleGET, "api")

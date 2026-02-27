@@ -45,5 +45,43 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Onboarding redirect: if user is on dashboard (but not onboarding page),
+  // check if onboarding is completed
+  if (
+    user &&
+    request.nextUrl.pathname.startsWith("/dashboard") &&
+    !request.nextUrl.pathname.startsWith("/dashboard/onboarding")
+  ) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .single()
+
+    if (profile && !profile.onboarding_completed) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/dashboard/onboarding"
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // If user already onboarded, redirect away from onboarding page
+  if (
+    user &&
+    request.nextUrl.pathname.startsWith("/dashboard/onboarding")
+  ) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .single()
+
+    if (profile?.onboarding_completed) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/dashboard"
+      return NextResponse.redirect(url)
+    }
+  }
+
   return supabaseResponse
 }

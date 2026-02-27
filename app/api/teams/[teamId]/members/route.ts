@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { inviteMemberSchema } from "@/lib/validators"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
 
 function getAdminClient() {
   return createAdminClient(
@@ -10,10 +11,11 @@ function getAdminClient() {
   )
 }
 
-export async function POST(
+async function handlePOST(
   request: Request,
-  { params }: { params: Promise<{ teamId: string }> }
+  context: unknown
 ) {
+  const { params } = context as { params: Promise<{ teamId: string }> }
   try {
     const { teamId } = await params
     const supabase = await createClient()
@@ -135,10 +137,11 @@ export async function POST(
   }
 }
 
-export async function DELETE(
+async function handleDELETE(
   request: Request,
-  { params }: { params: Promise<{ teamId: string }> }
+  context: unknown
 ) {
+  const { params } = context as { params: Promise<{ teamId: string }> }
   try {
     const { teamId } = await params
     const supabase = await createClient()
@@ -198,3 +201,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export const POST = withRateLimit(handlePOST, "api")
+export const DELETE = withRateLimit(handleDELETE, "api")

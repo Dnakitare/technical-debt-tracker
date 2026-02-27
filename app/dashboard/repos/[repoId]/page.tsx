@@ -5,9 +5,11 @@ import Link from "next/link"
 import { ArrowLeft, ExternalLink, AlertTriangle, DollarSign, Clock, ListChecks, GitPullRequest } from "lucide-react"
 import { formatCurrency, formatNumber } from "@/lib/utils"
 import { SyncButton } from "@/components/repos/sync-button"
+import { ExportButton } from "@/components/repos/export-button"
 import { PriorityBreakdownChart } from "@/components/repos/priority-breakdown-chart"
 import { RepoTrendChart } from "@/components/repos/repo-trend-chart"
 import { DeleteRepoButton } from "@/components/repos/delete-repo-button"
+import type { PlanKey } from "@/lib/constants"
 
 export async function generateMetadata({
   params,
@@ -40,6 +42,14 @@ export default async function RepoDetailPage({
     .single()
 
   if (!repo) notFound()
+
+  const { data: team } = await supabase
+    .from("teams")
+    .select("plan")
+    .eq("id", repo.team_id)
+    .single()
+
+  const plan = (team?.plan ?? "free") as PlanKey
 
   const { data: latestMetric } = await supabase
     .from("debt_metrics")
@@ -96,7 +106,10 @@ export default async function RepoDetailPage({
               {repo.sync_status}
             </span>
           </div>
-          <SyncButton repoId={repo.id} />
+          <div className="flex items-center gap-2">
+            <ExportButton repoId={repo.id} plan={plan} />
+            <SyncButton repoId={repo.id} />
+          </div>
         </div>
       </div>
 

@@ -4,11 +4,14 @@ import { classifyPriority, estimateHours, calculateDebtCost } from "@/lib/debt-e
 import type { DebtItem } from "@/lib/debt-engine"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
+import { createSlackClient, buildDebtSummaryBlocks } from "@/lib/slack"
 
-export async function POST(
+async function handlePOST(
   _request: Request,
-  { params }: { params: Promise<{ repoId: string }> }
+  context: unknown
 ) {
+  const { params } = context as { params: Promise<{ repoId: string }> }
   try {
     const { repoId } = await params
     const supabase = await createClient()
@@ -121,6 +124,31 @@ export async function POST(
         })
         .eq("id", repoId)
 
+      // Send Slack notification (non-blocking)
+      try {
+        const { data: team } = await adminClient
+          .from("teams")
+          .select("slack_bot_token, slack_channel_id")
+          .eq("id", repo.team_id)
+          .single()
+
+        if (team?.slack_bot_token && team?.slack_channel_id) {
+          const slack = createSlackClient(team.slack_bot_token)
+          await slack.chat.postMessage({
+            channel: team.slack_channel_id,
+            text: `Sync completed for ${repo.github_full_name}`,
+            blocks: buildDebtSummaryBlocks({
+              totalCost: summary.estimatedCostUsd,
+              totalIssues: summary.totalIssues,
+              criticalIssues: summary.criticalIssues,
+              repoCount: 1,
+            }),
+          })
+        }
+      } catch (slackError) {
+        console.error("Slack notification error:", slackError)
+      }
+
       return NextResponse.json({ success: true, summary })
     } catch (syncError) {
       await adminClient
@@ -138,3 +166,5 @@ export async function POST(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export const POST = withRateLimit(handlePOST, "sync")

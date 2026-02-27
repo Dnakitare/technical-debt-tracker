@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { useSearchParams } from "next/navigation"
 
 export default function SettingsPage() {
   const [fullName, setFullName] = useState("")
   const [hourlyRate, setHourlyRate] = useState(100)
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
+  const searchParams = useSearchParams()
 
   // GitHub connection state
   const [githubConnected, setGithubConnected] = useState(false)
@@ -16,6 +18,12 @@ export default function SettingsPage() {
   const [githubToken, setGithubToken] = useState("")
   const [githubLoading, setGithubLoading] = useState(false)
   const [githubChecking, setGithubChecking] = useState(true)
+
+  // Slack connection state
+  const [slackConnected, setSlackConnected] = useState(false)
+  const [slackTeamId, setSlackTeamId] = useState<string | null>(null)
+  const [slackChannelId, setSlackChannelId] = useState<string | null>(null)
+  const [slackLoading, setSlackLoading] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
@@ -34,6 +42,45 @@ export default function SettingsPage() {
       }
     }
     loadProfile()
+  }, [supabase])
+
+  // Show Slack connection result from OAuth redirect
+  useEffect(() => {
+    const slackParam = searchParams.get("slack")
+    if (slackParam === "connected") {
+      toast.success("Slack connected successfully!")
+    } else if (slackParam === "error") {
+      toast.error("Failed to connect Slack")
+    }
+  }, [searchParams])
+
+  // Check Slack connection
+  useEffect(() => {
+    async function checkSlack() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("current_team_id")
+        .eq("id", user.id)
+        .single()
+
+      if (profile?.current_team_id) {
+        const { data: team } = await supabase
+          .from("teams")
+          .select("slack_team_id, slack_channel_id")
+          .eq("id", profile.current_team_id)
+          .single()
+
+        if (team?.slack_team_id) {
+          setSlackConnected(true)
+          setSlackTeamId(team.slack_team_id)
+          setSlackChannelId(team.slack_channel_id)
+        }
+      }
+    }
+    checkSlack()
   }, [supabase])
 
   useEffect(() => {
@@ -97,6 +144,25 @@ export default function SettingsPage() {
       toast.error("Failed to connect GitHub")
     } finally {
       setGithubLoading(false)
+    }
+  }
+
+  async function handleDisconnectSlack() {
+    setSlackLoading(true)
+    try {
+      const res = await fetch("/api/slack/connect", { method: "DELETE" })
+      if (res.ok) {
+        setSlackConnected(false)
+        setSlackTeamId(null)
+        setSlackChannelId(null)
+        toast.success("Slack disconnected")
+      } else {
+        toast.error("Failed to disconnect Slack")
+      }
+    } catch {
+      toast.error("Failed to disconnect Slack")
+    } finally {
+      setSlackLoading(false)
     }
   }
 
@@ -238,6 +304,49 @@ export default function SettingsPage() {
               {githubLoading ? "Connecting..." : "Connect GitHub"}
             </button>
           </form>
+        )}
+      </div>
+
+      {/* Slack Integration */}
+      <div className="mt-8 max-w-lg rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          Slack Integration
+        </h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          Get notifications in Slack when repos are synced and use slash commands.
+        </p>
+
+        {slackConnected ? (
+          <div className="mt-4">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-green-500" />
+              <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                Connected to Slack workspace
+              </span>
+            </div>
+            {slackTeamId && (
+              <p className="mt-1 text-xs text-zinc-500">Team ID: {slackTeamId}</p>
+            )}
+            {slackChannelId && (
+              <p className="text-xs text-zinc-500">Channel ID: {slackChannelId}</p>
+            )}
+            <button
+              onClick={handleDisconnectSlack}
+              disabled={slackLoading}
+              className="mt-4 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+            >
+              {slackLoading ? "Disconnecting..." : "Disconnect Slack"}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4">
+            <a
+              href="/api/slack/connect"
+              className="inline-block rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Connect Slack
+            </a>
+          </div>
         )}
       </div>
     </div>

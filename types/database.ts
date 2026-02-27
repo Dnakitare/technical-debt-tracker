@@ -20,6 +20,7 @@ export interface Database {
           stripe_customer_id: string | null
           current_team_id: string | null
           hourly_rate: number
+          onboarding_completed: boolean
           created_at: string
           updated_at: string
         }
@@ -33,6 +34,7 @@ export interface Database {
           stripe_customer_id?: string | null
           current_team_id?: string | null
           hourly_rate?: number
+          onboarding_completed?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -46,6 +48,7 @@ export interface Database {
           stripe_customer_id?: string | null
           current_team_id?: string | null
           hourly_rate?: number
+          onboarding_completed?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -63,6 +66,10 @@ export interface Database {
           max_repos: number
           max_members: number
           default_hourly_rate: number
+          slack_team_id: string | null
+          slack_bot_token: string | null
+          slack_channel_id: string | null
+          slack_webhook_url: string | null
           created_at: string
           updated_at: string
         }
@@ -78,6 +85,10 @@ export interface Database {
           max_repos?: number
           max_members?: number
           default_hourly_rate?: number
+          slack_team_id?: string | null
+          slack_bot_token?: string | null
+          slack_channel_id?: string | null
+          slack_webhook_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -93,6 +104,10 @@ export interface Database {
           max_repos?: number
           max_members?: number
           default_hourly_rate?: number
+          slack_team_id?: string | null
+          slack_bot_token?: string | null
+          slack_channel_id?: string | null
+          slack_webhook_url?: string | null
           created_at?: string
           updated_at?: string
         }

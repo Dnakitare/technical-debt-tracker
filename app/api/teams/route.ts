@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { createTeamSchema } from "@/lib/validators"
 import { NextResponse } from "next/server"
+import { withRateLimit } from "@/lib/with-rate-limit"
 
-export async function GET() {
+async function handleGET() {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -27,7 +28,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+async function handlePOST(request: Request) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -71,3 +72,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+export const GET = withRateLimit(handleGET, "api")
+export const POST = withRateLimit(handlePOST, "api")
