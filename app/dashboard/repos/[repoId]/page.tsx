@@ -19,12 +19,12 @@ export async function generateMetadata({
   const { repoId } = await params
   const supabase = await createClient()
   const { data: repo } = await supabase
-    .from("repositories")
-    .select("full_name")
+    .from("repos")
+    .select("github_full_name")
     .eq("id", repoId)
     .single()
 
-  return { title: repo?.full_name ?? "Repository" }
+  return { title: repo?.github_full_name ?? "Repository" }
 }
 
 export default async function RepoDetailPage({

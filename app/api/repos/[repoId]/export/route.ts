@@ -24,9 +24,13 @@ async function handleGET(
 
     const { data: repo } = await supabase
       .from("repos")
-      .select("github_full_name")
+      .select("github_full_name, team_id")
       .eq("id", repoId)
       .single()
+
+    if (!repo || repo.team_id !== teamPlan.teamId) {
+      return NextResponse.json({ error: "Repo not found" }, { status: 404 })
+    }
 
     const { data: metrics } = await supabase
       .from("debt_metrics")

@@ -11,6 +11,9 @@ export function withRateLimit(handler: RouteHandler, tier: RateLimitTier): Route
     const limiter = getRateLimiter(tier)
 
     if (!limiter) {
+      if (process.env.NODE_ENV === "production") {
+        console.warn(`[rate-limit] No Redis configured — ${tier} tier rate limiting disabled`)
+      }
       return handler(request, context)
     }
 

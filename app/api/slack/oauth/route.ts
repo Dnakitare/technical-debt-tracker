@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 
@@ -8,6 +9,16 @@ export async function GET(request: Request) {
     const state = searchParams.get("state") // user ID
 
     if (!code || !state) {
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?slack=error`
+      )
+    }
+
+    // Verify the authenticated user matches the state param
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user || user.id !== state) {
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?slack=error`
       )
