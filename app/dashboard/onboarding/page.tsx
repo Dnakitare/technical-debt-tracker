@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -199,14 +199,16 @@ export default function OnboardingPage() {
     toast.success(`Connected ${newlyConnected.length} repo(s)`)
   }
 
-  async function handleSyncAll() {
+  const syncStartedRef = useRef(false)
+
+  const handleSyncAll = useCallback(async (repos: ConnectedRepo[]) => {
     const progress: Record<string, "pending" | "syncing" | "done" | "error"> = {}
-    for (const repo of connectedRepos) {
+    for (const repo of repos) {
       progress[repo.id] = "pending"
     }
     setSyncProgress(progress)
 
-    for (const repo of connectedRepos) {
+    for (const repo of repos) {
       setSyncProgress((prev) => ({ ...prev, [repo.id]: "syncing" }))
       try {
         const res = await fetch(`/api/repos/${repo.id}/sync`, { method: "POST" })
@@ -219,14 +221,17 @@ export default function OnboardingPage() {
         setSyncProgress((prev) => ({ ...prev, [repo.id]: "error" }))
       }
     }
-  }
+  }, [])
 
   useEffect(() => {
-    if (step === 3 && connectedRepos.length > 0 && Object.keys(syncProgress).length === 0) {
-      handleSyncAll()
+    if (step === 3 && connectedRepos.length > 0 && !syncStartedRef.current) {
+      syncStartedRef.current = true
+      handleSyncAll(connectedRepos)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+    if (step !== 3) {
+      syncStartedRef.current = false
+    }
+  }, [step, connectedRepos, handleSyncAll])
 
   async function handleComplete() {
     setLoading(true)

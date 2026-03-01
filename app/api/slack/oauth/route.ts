@@ -78,12 +78,27 @@ async function handleGet(request: Request) {
       return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
     }
 
+    // Check if this Slack workspace is already linked to another team
+    const slackTeamId = tokenData.team?.id ?? null
+    if (slackTeamId) {
+      const { data: existingTeam } = await adminClient
+        .from("teams")
+        .select("id")
+        .eq("slack_team_id", slackTeamId)
+        .neq("id", profile.current_team_id)
+        .single()
+
+      if (existingTeam) {
+        return NextResponse.redirect(`${SETTINGS_URL}?slack=error&reason=workspace_already_linked`)
+      }
+    }
+
     // Store Slack credentials
     await adminClient
       .from("teams")
       .update({
         slack_bot_token: tokenData.access_token,
-        slack_team_id: tokenData.team?.id ?? null,
+        slack_team_id: slackTeamId,
         slack_channel_id: tokenData.incoming_webhook?.channel_id ?? null,
         slack_webhook_url: webhookUrl,
       })

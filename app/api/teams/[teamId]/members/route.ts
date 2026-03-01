@@ -37,7 +37,8 @@ async function handlePOST(
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { email, role } = parsed.data
+    const email = parsed.data.email.toLowerCase().trim()
+    const { role } = parsed.data
 
     // Check member limit
     const { count: memberCount } = await supabase

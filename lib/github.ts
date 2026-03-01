@@ -21,14 +21,14 @@ export async function fetchRepoIssues(
   labels?: string[]
 ) {
   const octokit = createOctokit(token)
-  const { data } = await octokit.rest.issues.listForRepo({
+  const issues = await octokit.paginate(octokit.rest.issues.listForRepo, {
     owner,
     repo,
     state: "open",
     labels: labels?.join(","),
     per_page: GITHUB_API_PAGE_SIZE,
   })
-  return data
+  return issues
 }
 
 export async function fetchRepoPullRequests(
@@ -37,13 +37,13 @@ export async function fetchRepoPullRequests(
   repo: string
 ) {
   const octokit = createOctokit(token)
-  const { data } = await octokit.rest.pulls.list({
+  const prs = await octokit.paginate(octokit.rest.pulls.list, {
     owner,
     repo,
     state: "open",
     per_page: GITHUB_API_PAGE_SIZE,
   })
-  return data
+  return prs
 }
 
 export async function searchCodeForDebt(

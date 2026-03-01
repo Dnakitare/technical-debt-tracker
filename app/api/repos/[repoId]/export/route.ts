@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { getTeamPlan, canExport } from "@/lib/plan-check"
+import { getTeamPlan, canExport, hasActiveSubscription } from "@/lib/plan-check"
 import { REPO_EXPORT_LIMIT, CSV_HEADER } from "@/lib/constants"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
@@ -21,6 +21,10 @@ async function handleGET(
     const teamPlan = await getTeamPlan(user.id)
     if (!teamPlan || !canExport(teamPlan.plan)) {
       return NextResponse.json({ error: "Upgrade to Pro to export data" }, { status: 403 })
+    }
+
+    if (!hasActiveSubscription(teamPlan)) {
+      return NextResponse.json({ error: "Subscription expired" }, { status: 403 })
     }
 
     const { data: repo } = await supabase

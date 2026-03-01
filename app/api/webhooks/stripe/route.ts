@@ -30,6 +30,21 @@ async function handlePost(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
+  // Idempotency: skip already-processed events
+  const { data: existing } = await supabaseAdmin
+    .from("processed_webhook_events")
+    .select("id")
+    .eq("event_id", event.id)
+    .single()
+
+  if (existing) {
+    return NextResponse.json({ received: true, duplicate: true })
+  }
+
+  await supabaseAdmin
+    .from("processed_webhook_events")
+    .insert({ event_id: event.id, event_type: event.type })
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object

@@ -12,7 +12,11 @@ export function withRateLimit(handler: RouteHandler, tier: RateLimitTier): Route
 
     if (!limiter) {
       if (process.env.NODE_ENV === "production") {
-        console.warn(`[rate-limit] No Redis configured — ${tier} tier rate limiting disabled`)
+        console.error(`[rate-limit] No Redis configured — ${tier} tier rate limiting unavailable`)
+        return NextResponse.json(
+          { error: "Service temporarily unavailable" },
+          { status: 503 }
+        )
       }
       return handler(request, context)
     }
