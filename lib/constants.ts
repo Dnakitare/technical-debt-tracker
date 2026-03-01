@@ -61,6 +61,13 @@ export const PLAN_FEATURES: Record<PlanKey, string[]> = {
 
 export const DEFAULT_HOURLY_RATE = 100
 
+export const SYNC_INTERVALS: Record<PlanKey, number> = {
+  free: 24 * 60,      // 24 hours in minutes
+  starter: 60,        // 1 hour
+  pro: 15,            // 15 minutes
+  enterprise: 15,     // 15 minutes
+}
+
 export const GITHUB_API_PAGE_SIZE = 100
 export const METRICS_HISTORY_LIMIT = 30
 export const REPO_EXPORT_LIMIT = 365
