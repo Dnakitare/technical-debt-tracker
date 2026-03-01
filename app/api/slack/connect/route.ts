@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { SLACK_SCOPES } from "@/lib/constants"
@@ -18,11 +19,14 @@ async function handleGET() {
       return NextResponse.json({ error: "Slack not configured" }, { status: 500 })
     }
 
+    // Generate cryptographic state: random token + user ID for verification
+    const stateToken = randomBytes(16).toString("hex")
+    const state = `${stateToken}:${user.id}`
+
     const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/slack/oauth`
     const scopes = SLACK_SCOPES
-    const state = user.id // Use user ID as state for verification
 
-    const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
+    const url = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`
 
     return NextResponse.redirect(url)
   } catch (error) {

@@ -10,22 +10,18 @@ const TIER_CONFIG: Record<RateLimitTier, { requests: number; window: `${number} 
   webhook: { requests: 120, window: "1 m" },
 }
 
-function hasRedisConfig(): boolean {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-}
-
 function createLimiter(tier: RateLimitTier): Ratelimit | null {
-  if (!hasRedisConfig()) {
+  const url = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+
+  if (!url || !token) {
     return null
   }
 
   const config = TIER_CONFIG[tier]
 
   return new Ratelimit({
-    redis: new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    }),
+    redis: new Redis({ url, token }),
     limiter: Ratelimit.slidingWindow(config.requests, config.window),
     analytics: true,
     prefix: `ratelimit:${tier}`,

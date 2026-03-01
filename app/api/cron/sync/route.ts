@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "crypto"
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { syncRepo } from "@/lib/sync-repo"
@@ -5,8 +6,24 @@ import { SYNC_INTERVALS, DEFAULT_HOURLY_RATE } from "@/lib/constants"
 import type { PlanKey } from "@/lib/constants"
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization")
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    console.error("CRON_SECRET is not configured")
+    return NextResponse.json({ error: "Not configured" }, { status: 500 })
+  }
+
+  const authHeader = request.headers.get("authorization") ?? ""
+  const expected = `Bearer ${cronSecret}`
+  let authorized = false
+  try {
+    authorized =
+      authHeader.length === expected.length &&
+      timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))
+  } catch {
+    authorized = false
+  }
+
+  if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

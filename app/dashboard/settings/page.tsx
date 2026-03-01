@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useSearchParams } from "next/navigation"
@@ -9,7 +9,7 @@ export default function SettingsPage() {
   const [fullName, setFullName] = useState("")
   const [hourlyRate, setHourlyRate] = useState(100)
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const searchParams = useSearchParams()
 
   // GitHub connection state
@@ -25,23 +25,61 @@ export default function SettingsPage() {
   const [slackChannelId, setSlackChannelId] = useState<string | null>(null)
   const [slackLoading, setSlackLoading] = useState(false)
 
+  // Load profile, GitHub status, and Slack status in a single effect
   useEffect(() => {
-    async function loadProfile() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+    let cancelled = false
 
-      const { data } = await supabase
-        .from("users")
-        .select("full_name, hourly_rate")
-        .eq("id", user.id)
-        .single()
+    async function loadAll() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user || cancelled) return
 
-      if (data) {
-        setFullName(data.full_name ?? "")
-        setHourlyRate(data.hourly_rate ?? 100)
+        // Load profile and GitHub status in parallel
+        const [profileResult, githubResult] = await Promise.allSettled([
+          supabase
+            .from("users")
+            .select("full_name, hourly_rate, current_team_id")
+            .eq("id", user.id)
+            .single(),
+          fetch("/api/github/token").then((r) => r.json()),
+        ])
+
+        if (cancelled) return
+
+        if (profileResult.status === "fulfilled" && profileResult.value.data) {
+          const profile = profileResult.value.data
+          setFullName(profile.full_name ?? "")
+          setHourlyRate(profile.hourly_rate ?? 100)
+
+          // Check Slack using team_id from profile
+          if (profile.current_team_id) {
+            const { data: team } = await supabase
+              .from("teams")
+              .select("slack_team_id, slack_channel_id")
+              .eq("id", profile.current_team_id)
+              .single()
+
+            if (!cancelled && team?.slack_team_id) {
+              setSlackConnected(true)
+              setSlackTeamId(team.slack_team_id)
+              setSlackChannelId(team.slack_channel_id)
+            }
+          }
+        }
+
+        if (githubResult.status === "fulfilled") {
+          setGithubConnected(githubResult.value.connected)
+          setGithubUsername(githubResult.value.github_username)
+        }
+      } catch (err) {
+        console.error("Settings load failed:", err)
+      } finally {
+        if (!cancelled) setGithubChecking(false)
       }
     }
-    loadProfile()
+
+    loadAll()
+    return () => { cancelled = true }
   }, [supabase])
 
   // Show Slack connection result from OAuth redirect
@@ -53,51 +91,6 @@ export default function SettingsPage() {
       toast.error("Failed to connect Slack")
     }
   }, [searchParams])
-
-  // Check Slack connection
-  useEffect(() => {
-    async function checkSlack() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data: profile } = await supabase
-        .from("users")
-        .select("current_team_id")
-        .eq("id", user.id)
-        .single()
-
-      if (profile?.current_team_id) {
-        const { data: team } = await supabase
-          .from("teams")
-          .select("slack_team_id, slack_channel_id")
-          .eq("id", profile.current_team_id)
-          .single()
-
-        if (team?.slack_team_id) {
-          setSlackConnected(true)
-          setSlackTeamId(team.slack_team_id)
-          setSlackChannelId(team.slack_channel_id)
-        }
-      }
-    }
-    checkSlack()
-  }, [supabase])
-
-  useEffect(() => {
-    async function checkGithub() {
-      try {
-        const res = await fetch("/api/github/token")
-        const data = await res.json()
-        setGithubConnected(data.connected)
-        setGithubUsername(data.github_username)
-      } catch (err) {
-        console.error("GitHub connection check failed:", err)
-      } finally {
-        setGithubChecking(false)
-      }
-    }
-    checkGithub()
-  }, [])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()

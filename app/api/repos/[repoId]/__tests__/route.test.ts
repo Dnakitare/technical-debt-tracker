@@ -7,6 +7,14 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue(mockSupabase),
 }))
 
+const mockVerifyRepoAccess = vi.fn()
+const mockHasWriteAccess = vi.fn()
+
+vi.mock("@/lib/auth-check", () => ({
+  verifyRepoAccess: (...args: unknown[]) => mockVerifyRepoAccess(...args),
+  hasWriteAccess: (...args: unknown[]) => mockHasWriteAccess(...args),
+}))
+
 const { GET, DELETE } = await import("@/app/api/repos/[repoId]/route")
 
 function makeContext(repoId: string) {
@@ -19,6 +27,9 @@ beforeEach(() => {
     data: { user: { id: "user-1", email: "test@example.com" } },
     error: null,
   })
+  // Default: user is an admin member of the repo's team
+  mockVerifyRepoAccess.mockResolvedValue({ role: "admin", team_id: "team-1" })
+  mockHasWriteAccess.mockReturnValue(true)
 })
 
 describe("GET /api/repos/[repoId]", () => {
@@ -52,8 +63,26 @@ describe("GET /api/repos/[repoId]", () => {
     expect(body.error).toBe("Repo not found")
   })
 
+  it("returns 403 when user is not a team member", async () => {
+    const mockRepo = { id: "repo-1", team_id: "team-1", github_full_name: "org/repo" }
+
+    mockSupabase.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: mockRepo, error: null }),
+    }))
+
+    mockVerifyRepoAccess.mockResolvedValueOnce(null)
+
+    const res = await GET(
+      new Request("http://localhost/api/repos/repo-1"),
+      makeContext("repo-1")
+    )
+    expect(res.status).toBe(403)
+  })
+
   it("returns repo on success", async () => {
-    const mockRepo = { id: "repo-1", github_full_name: "org/repo" }
+    const mockRepo = { id: "repo-1", team_id: "team-1", github_full_name: "org/repo" }
 
     mockSupabase.from.mockImplementationOnce(() => ({
       select: vi.fn().mockReturnThis(),
@@ -86,16 +115,57 @@ describe("DELETE /api/repos/[repoId]", () => {
     expect(res.status).toBe(401)
   })
 
+  it("returns 403 when user is not a team member", async () => {
+    mockSupabase.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { team_id: "team-1" }, error: null }),
+    }))
+
+    mockVerifyRepoAccess.mockResolvedValueOnce(null)
+
+    const res = await DELETE(
+      new Request("http://localhost/api/repos/repo-1", { method: "DELETE" }),
+      makeContext("repo-1")
+    )
+    expect(res.status).toBe(403)
+  })
+
+  it("returns 403 when user lacks write access", async () => {
+    mockSupabase.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { team_id: "team-1" }, error: null }),
+    }))
+
+    mockVerifyRepoAccess.mockResolvedValueOnce({ role: "viewer", team_id: "team-1" })
+    mockHasWriteAccess.mockReturnValueOnce(false)
+
+    const res = await DELETE(
+      new Request("http://localhost/api/repos/repo-1", { method: "DELETE" }),
+      makeContext("repo-1")
+    )
+    expect(res.status).toBe(403)
+  })
+
   it("returns success on delete", async () => {
-    const chain: Record<string, unknown> = {}
-    chain.delete = vi.fn().mockReturnValue(chain)
-    chain.eq = vi.fn().mockReturnValue(chain)
-    Object.defineProperty(chain, "then", {
+    // First from() call: select repo to get team_id
+    mockSupabase.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { team_id: "team-1" }, error: null }),
+    }))
+
+    // Second from() call: delete repo
+    const deleteChain: Record<string, unknown> = {}
+    deleteChain.delete = vi.fn().mockReturnValue(deleteChain)
+    deleteChain.eq = vi.fn().mockReturnValue(deleteChain)
+    Object.defineProperty(deleteChain, "then", {
       value: (resolve: (val: unknown) => void) => resolve({ error: null }),
       configurable: true,
     })
 
-    mockSupabase.from.mockImplementationOnce(() => chain)
+    mockSupabase.from.mockImplementationOnce(() => deleteChain)
 
     const res = await DELETE(
       new Request("http://localhost/api/repos/repo-1", { method: "DELETE" }),
@@ -108,16 +178,24 @@ describe("DELETE /api/repos/[repoId]", () => {
   })
 
   it("returns 500 on delete error", async () => {
-    const chain: Record<string, unknown> = {}
-    chain.delete = vi.fn().mockReturnValue(chain)
-    chain.eq = vi.fn().mockReturnValue(chain)
-    Object.defineProperty(chain, "then", {
+    // First from() call: select repo
+    mockSupabase.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: { team_id: "team-1" }, error: null }),
+    }))
+
+    // Second from() call: delete fails
+    const deleteChain: Record<string, unknown> = {}
+    deleteChain.delete = vi.fn().mockReturnValue(deleteChain)
+    deleteChain.eq = vi.fn().mockReturnValue(deleteChain)
+    Object.defineProperty(deleteChain, "then", {
       value: (resolve: (val: unknown) => void) =>
         resolve({ error: { message: "RLS violation" } }),
       configurable: true,
     })
 
-    mockSupabase.from.mockImplementationOnce(() => chain)
+    mockSupabase.from.mockImplementationOnce(() => deleteChain)
 
     const res = await DELETE(
       new Request("http://localhost/api/repos/repo-1", { method: "DELETE" }),

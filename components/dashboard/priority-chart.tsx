@@ -41,7 +41,7 @@ export function PriorityChart({ data }: { data: PriorityData[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={chartData}>
+      <BarChart data={chartData} role="img" aria-label="Issue priority breakdown over time">
         <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
         <XAxis dataKey="date" fontSize={12} stroke="#71717a" />
         <YAxis fontSize={12} stroke="#71717a" />

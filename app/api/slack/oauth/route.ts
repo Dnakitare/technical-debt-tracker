@@ -3,30 +3,40 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
 
+const SETTINGS_URL = `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings`
+
 async function handleGet(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get("code")
-    const state = searchParams.get("state") // user ID
+    const state = searchParams.get("state")
 
     if (!code || !state) {
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?slack=error`
-      )
+      return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
     }
+
+    // State format: "<random_token>:<user_id>"
+    const colonIdx = state.indexOf(":")
+    if (colonIdx === -1) {
+      return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
+    }
+    const stateUserId = state.slice(colonIdx + 1)
 
     // Verify the authenticated user matches the state param
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user || user.id !== state) {
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?slack=error`
-      )
+    if (!user || user.id !== stateUserId) {
+      return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
     }
 
-    const clientId = process.env.SLACK_CLIENT_ID!
-    const clientSecret = process.env.SLACK_CLIENT_SECRET!
+    const clientId = process.env.SLACK_CLIENT_ID
+    const clientSecret = process.env.SLACK_CLIENT_SECRET
+    if (!clientId || !clientSecret) {
+      console.error("SLACK_CLIENT_ID or SLACK_CLIENT_SECRET not configured")
+      return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
+    }
+
     const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/slack/oauth`
 
     // Exchange code for token
@@ -45,9 +55,14 @@ async function handleGet(request: Request) {
 
     if (!tokenData.ok) {
       console.error("Slack OAuth error:", tokenData.error)
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?slack=error`
-      )
+      return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
+    }
+
+    // Validate webhook URL if present
+    const webhookUrl = tokenData.incoming_webhook?.url ?? null
+    if (webhookUrl && !webhookUrl.startsWith("https://hooks.slack.com/")) {
+      console.error("Slack OAuth: unexpected webhook URL origin")
+      return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
     }
 
     // Get user's team
@@ -56,13 +71,11 @@ async function handleGet(request: Request) {
     const { data: profile } = await adminClient
       .from("users")
       .select("current_team_id")
-      .eq("id", state)
+      .eq("id", stateUserId)
       .single()
 
     if (!profile?.current_team_id) {
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?slack=error`
-      )
+      return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
     }
 
     // Store Slack credentials
@@ -72,18 +85,14 @@ async function handleGet(request: Request) {
         slack_bot_token: tokenData.access_token,
         slack_team_id: tokenData.team?.id ?? null,
         slack_channel_id: tokenData.incoming_webhook?.channel_id ?? null,
-        slack_webhook_url: tokenData.incoming_webhook?.url ?? null,
+        slack_webhook_url: webhookUrl,
       })
       .eq("id", profile.current_team_id)
 
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?slack=connected`
-    )
+    return NextResponse.redirect(`${SETTINGS_URL}?slack=connected`)
   } catch (error) {
     console.error("Slack OAuth callback error:", error)
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings?slack=error`
-    )
+    return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
   }
 }
 

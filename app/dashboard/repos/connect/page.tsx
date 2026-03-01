@@ -36,22 +36,26 @@ export default function ConnectRepoPage() {
     const controller = new AbortController()
     async function load() {
       try {
-        const [reposRes, connectedRes] = await Promise.all([
+        const [reposResult, connectedResult] = await Promise.allSettled([
           fetch("/api/github/repos", { signal: controller.signal }),
           fetch("/api/repos", { signal: controller.signal }),
         ])
 
-        if (!reposRes.ok) {
-          const data = await reposRes.json()
-          setError(data.error ?? "Failed to fetch GitHub repos")
+        if (reposResult.status === "rejected" || !reposResult.value.ok) {
+          if (reposResult.status === "fulfilled") {
+            const data = await reposResult.value.json()
+            setError(data.error ?? "Failed to fetch GitHub repos")
+          } else {
+            setError("Failed to fetch GitHub repos")
+          }
           return
         }
 
-        const reposData: GitHubRepo[] = await reposRes.json()
+        const reposData: GitHubRepo[] = await reposResult.value.json()
         setRepos(reposData)
 
-        if (connectedRes.ok) {
-          const connectedData: ConnectedRepo[] = await connectedRes.json()
+        if (connectedResult.status === "fulfilled" && connectedResult.value.ok) {
+          const connectedData: ConnectedRepo[] = await connectedResult.value.json()
           setConnectedIds(
             new Set(connectedData.map((r) => r.github_repo_id))
           )

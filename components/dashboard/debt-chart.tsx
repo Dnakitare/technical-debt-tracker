@@ -36,7 +36,7 @@ export function DebtChart({ metrics }: { metrics: DebtMetric[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData}>
+      <LineChart data={chartData} role="img" aria-label="Estimated debt cost over time">
         <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
         <XAxis dataKey="date" fontSize={12} stroke="#71717a" />
         <YAxis
