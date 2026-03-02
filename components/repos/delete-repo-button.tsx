@@ -36,6 +36,7 @@ export function DeleteRepoButton({ repoId }: { repoId: string }) {
         <button
           onClick={handleDelete}
           disabled={deleting}
+          aria-label="Confirm delete repository"
           className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
         >
           {deleting ? "Deleting..." : "Yes, delete"}
@@ -43,6 +44,7 @@ export function DeleteRepoButton({ repoId }: { repoId: string }) {
         <button
           onClick={() => setConfirming(false)}
           disabled={deleting}
+          aria-label="Cancel delete"
           className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           Cancel
@@ -54,6 +56,7 @@ export function DeleteRepoButton({ repoId }: { repoId: string }) {
   return (
     <button
       onClick={() => setConfirming(true)}
+      aria-label="Delete repository"
       className="flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
     >
       <Trash2 className="h-4 w-4" />

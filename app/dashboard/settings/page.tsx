@@ -204,6 +204,7 @@ export default function SettingsPage() {
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
+            maxLength={100}
             className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
           />
         </div>
@@ -220,6 +221,7 @@ export default function SettingsPage() {
             type="number"
             min={0}
             max={10000}
+            step={1}
             value={hourlyRate}
             onChange={(e) => setHourlyRate(Number(e.target.value))}
             className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
@@ -260,6 +262,7 @@ export default function SettingsPage() {
             <button
               onClick={handleDisconnectGithub}
               disabled={githubLoading}
+              aria-label="Disconnect GitHub"
               className="mt-4 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
             >
               {githubLoading ? "Disconnecting..." : "Disconnect"}
@@ -326,6 +329,7 @@ export default function SettingsPage() {
             <button
               onClick={handleDisconnectSlack}
               disabled={slackLoading}
+              aria-label="Disconnect Slack"
               className="mt-4 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
             >
               {slackLoading ? "Disconnecting..." : "Disconnect Slack"}

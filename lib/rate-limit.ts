@@ -15,6 +15,9 @@ function createLimiter(tier: RateLimitTier): Ratelimit | null {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN
 
   if (!url || !token) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn(`[rate-limit] Redis not configured — ${tier} tier disabled in development`)
+    }
     return null
   }
 

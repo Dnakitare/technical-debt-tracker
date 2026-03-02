@@ -17,7 +17,7 @@ interface MemberWithUser {
   } | null
 }
 
-export const metadata: Metadata = { title: "Team" }
+export const metadata: Metadata = { title: "Team", description: "Manage team members and invitations" }
 
 export default async function TeamPage() {
   const supabase = await createClient()

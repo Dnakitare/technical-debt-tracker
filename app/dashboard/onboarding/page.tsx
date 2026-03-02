@@ -284,9 +284,9 @@ export default function OnboardingPage() {
       </div>
 
       {/* Stepper */}
-      <div className="mb-8 flex items-center justify-center gap-2">
+      <div className="mb-8 flex items-center justify-center gap-2" role="list">
         {STEPS.map((s, i) => (
-          <div key={s.label} className="flex items-center gap-2">
+          <div key={s.label} className="flex items-center gap-2" role="listitem" aria-current={i === step ? "step" : undefined}>
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                 i < step

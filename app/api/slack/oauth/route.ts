@@ -3,9 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
 
-const SETTINGS_URL = `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings`
-
 async function handleGet(request: Request) {
+  const SETTINGS_URL = `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings`
   try {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get("code")

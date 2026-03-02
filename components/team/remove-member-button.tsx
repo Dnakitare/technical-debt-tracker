@@ -53,6 +53,7 @@ export function RemoveMemberButton({
         <button
           onClick={handleRemove}
           disabled={removing}
+          aria-label="Confirm remove member"
           className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950"
         >
           {removing ? "Removing..." : "Confirm"}
@@ -60,6 +61,7 @@ export function RemoveMemberButton({
         <button
           onClick={() => setConfirming(false)}
           disabled={removing}
+          aria-label="Cancel remove"
           className="rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           Cancel
@@ -71,6 +73,7 @@ export function RemoveMemberButton({
   return (
     <button
       onClick={() => setConfirming(true)}
+      aria-label="Remove team member"
       className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
     >
       Remove

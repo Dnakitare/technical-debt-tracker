@@ -54,9 +54,12 @@ export async function GET(request: Request) {
   let skipped = 0
   const errors: string[] = []
 
+  interface CronRepoTeam { plan: PlanKey }
+  interface CronRepoUser { github_token: string | null; hourly_rate: number | null }
+
   for (const repo of repos ?? []) {
-    const team = repo.teams as unknown as { plan: PlanKey }
-    const user = repo.users as unknown as { github_token: string | null; hourly_rate: number | null }
+    const team = repo.teams as unknown as CronRepoTeam
+    const user = repo.users as unknown as CronRepoUser
 
     if (!user?.github_token) {
       skipped++

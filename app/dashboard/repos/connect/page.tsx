@@ -156,6 +156,7 @@ export default function ConnectRepoPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search repositories..."
+              aria-label="Search repositories"
               className="w-full rounded-lg border border-zinc-300 py-2 pl-10 pr-4 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
             />
           </div>

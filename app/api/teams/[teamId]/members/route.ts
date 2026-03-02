@@ -52,7 +52,7 @@ async function handlePOST(
       .eq("id", teamId)
       .single()
 
-    if (team && memberCount != null && memberCount >= team.max_members) {
+    if (team && memberCount !== null && memberCount >= team.max_members) {
       return NextResponse.json(
         { error: "Team member limit reached. Upgrade your plan to add more members." },
         { status: 403 }

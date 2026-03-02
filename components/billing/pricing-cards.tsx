@@ -9,7 +9,7 @@ export function PricingCards({
   currentPlan,
   teamId,
 }: {
-  currentPlan: string
+  currentPlan: PlanKey
   teamId: string
 }) {
   const [loading, setLoading] = useState<string | null>(null)

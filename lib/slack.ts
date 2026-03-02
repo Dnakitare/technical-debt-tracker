@@ -13,7 +13,7 @@ export function verifySlackSignature(
   body: string
 ): boolean {
   const fiveMinutesAgo = Math.floor(Date.now() / 1000) - SLACK_REQUEST_TIMEOUT_SECONDS
-  if (parseInt(timestamp) < fiveMinutesAgo) {
+  if (parseInt(timestamp, 10) < fiveMinutesAgo) {
     return false
   }
 
