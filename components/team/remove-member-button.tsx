@@ -43,7 +43,7 @@ export function RemoveMemberButton({
 
   if (isOwner) {
     return (
-      <span className="text-xs text-zinc-400">Owner</span>
+      <span className="text-xs text-zinc-500">Owner</span>
     )
   }
 

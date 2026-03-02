@@ -293,12 +293,12 @@ export default function OnboardingPage() {
                   ? "bg-blue-600 text-white"
                   : i === step
                     ? "border-2 border-blue-600 text-blue-600"
-                    : "border-2 border-zinc-300 text-zinc-400 dark:border-zinc-700"
+                    : "border-2 border-zinc-300 text-zinc-500 dark:border-zinc-700"
               }`}
             >
               {i < step ? <Check className="h-4 w-4" /> : i + 1}
             </div>
-            <span className={`hidden text-xs sm:inline ${i === step ? "font-medium text-zinc-900 dark:text-zinc-50" : "text-zinc-400"}`}>
+            <span className={`hidden text-xs sm:inline ${i === step ? "font-medium text-zinc-900 dark:text-zinc-50" : "text-zinc-500"}`}>
               {s.label}
             </span>
             {i < STEPS.length - 1 && (

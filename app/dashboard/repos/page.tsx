@@ -98,9 +98,9 @@ export default async function ReposPage() {
       ) : (
         <div className="rounded-xl border-2 border-dashed border-zinc-300 p-12 text-center dark:border-zinc-700">
           <GitBranch className="mx-auto h-12 w-12 text-zinc-400" />
-          <h3 className="mt-4 text-lg font-medium text-zinc-900 dark:text-zinc-50">
+          <h2 className="mt-4 text-lg font-medium text-zinc-900 dark:text-zinc-50">
             No repositories yet
-          </h3>
+          </h2>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             Connect a GitHub repository to start analyzing technical debt.
           </p>

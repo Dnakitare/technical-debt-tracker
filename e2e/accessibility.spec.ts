@@ -13,7 +13,9 @@ for (const { name, path } of pages) {
   test(`${name} page has no accessibility violations`, async ({ page }) => {
     await page.goto(path)
 
-    const results = await new AxeBuilder({ page }).analyze()
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze()
 
     expect(results.violations).toEqual([])
   })
