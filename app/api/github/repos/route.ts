@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { fetchUserRepos } from "@/lib/github"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handleGET() {
   try {
@@ -39,7 +40,7 @@ async function handleGET() {
 
     return NextResponse.json(simplified)
   } catch (error) {
-    console.error("GitHub repos fetch error:", error)
+    captureApiError("GitHub repos fetch error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

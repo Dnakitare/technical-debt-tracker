@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { SLACK_SCOPES } from "@/lib/constants"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handleGET() {
   try {
@@ -30,7 +31,7 @@ async function handleGET() {
 
     return NextResponse.redirect(url)
   } catch (error) {
-    console.error("Slack connect error:", error)
+    captureApiError("Slack connect error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -72,7 +73,7 @@ async function handleDELETE() {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Slack disconnect error:", error)
+    captureApiError("Slack disconnect error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

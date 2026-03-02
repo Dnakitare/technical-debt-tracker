@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handleGet(request: Request) {
   const SETTINGS_URL = `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/settings`
@@ -53,7 +54,7 @@ async function handleGet(request: Request) {
     const tokenData = await tokenRes.json()
 
     if (!tokenData.ok) {
-      console.error("Slack OAuth error:", tokenData.error)
+      captureApiError("Slack OAuth error", tokenData.error)
       return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
     }
 
@@ -105,7 +106,7 @@ async function handleGet(request: Request) {
 
     return NextResponse.redirect(`${SETTINGS_URL}?slack=connected`)
   } catch (error) {
-    console.error("Slack OAuth callback error:", error)
+    captureApiError("Slack OAuth callback error", error)
     return NextResponse.redirect(`${SETTINGS_URL}?slack=error`)
   }
 }

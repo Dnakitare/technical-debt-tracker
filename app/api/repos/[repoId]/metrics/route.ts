@@ -3,6 +3,7 @@ import { verifyRepoAccess } from "@/lib/auth-check"
 import { METRICS_HISTORY_LIMIT } from "@/lib/constants"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handleGET(
   _request: Request,
@@ -46,7 +47,7 @@ async function handleGET(
 
     return NextResponse.json(metrics)
   } catch (error) {
-    console.error("Metrics fetch error:", error)
+    captureApiError("Metrics fetch error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

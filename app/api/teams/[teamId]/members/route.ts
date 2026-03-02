@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { inviteMemberSchema } from "@/lib/validators"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handlePOST(
   request: Request,
@@ -126,7 +127,7 @@ async function handlePOST(
       return NextResponse.json({ status: "invited" }, { status: 201 })
     }
   } catch (error) {
-    console.error("Member invite error:", error)
+    captureApiError("Member invite error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -191,7 +192,7 @@ async function handleDELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Member remove error:", error)
+    captureApiError("Member remove error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

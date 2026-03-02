@@ -96,20 +96,24 @@ export default function SettingsPage() {
     e.preventDefault()
     setLoading(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName, hourlyRate }),
+      })
 
-    const { error } = await supabase
-      .from("users")
-      .update({ full_name: fullName, hourly_rate: hourlyRate })
-      .eq("id", user.id)
-
-    if (error) {
-      toast.error(error.message)
-    } else {
-      toast.success("Settings saved")
+      if (!res.ok) {
+        const data = await res.json()
+        toast.error(data.error?.fieldErrors ? "Invalid input. Please check your values." : (data.error ?? "Failed to save settings"))
+      } else {
+        toast.success("Settings saved")
+      }
+    } catch {
+      toast.error("Failed to save settings")
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function handleConnectGithub(e: React.FormEvent) {

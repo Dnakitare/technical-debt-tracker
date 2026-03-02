@@ -1,6 +1,7 @@
 import { verifySlackSignature } from "@/lib/slack"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handlePost(request: Request) {
   try {
@@ -24,7 +25,7 @@ async function handlePost(request: Request) {
     // Acknowledge the event
     return NextResponse.json({ ok: true })
   } catch (error) {
-    console.error("Slack event error:", error)
+    captureApiError("Slack event error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

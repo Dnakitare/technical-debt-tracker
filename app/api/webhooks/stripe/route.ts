@@ -4,6 +4,7 @@ import { PLANS, type PlanKey } from "@/lib/constants"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
 import type Stripe from "stripe"
+import { captureApiError } from "@/lib/api-error"
 
 async function handlePost(request: Request) {
   const body = await request.text()
@@ -26,7 +27,7 @@ async function handlePost(request: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
   } catch (err) {
-    console.error("Webhook signature verification failed:", err)
+    captureApiError("Webhook signature verification failed", err)
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 

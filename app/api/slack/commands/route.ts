@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { verifySlackSignature, buildDebtSummaryBlocks } from "@/lib/slack"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handlePost(request: Request) {
   try {
@@ -89,7 +90,7 @@ async function handlePost(request: Request) {
       text: "*DebtLens Commands:*\n`/debtlens status` - View technical debt summary\n`/debtlens sync` - Trigger sync for all repos\n`/debtlens help` - Show this help text",
     })
   } catch (error) {
-    console.error("Slack command error:", error)
+    captureApiError("Slack command error", error)
     return NextResponse.json({
       response_type: "ephemeral",
       text: "An error occurred processing your command.",

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createTeamSchema } from "@/lib/validators"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handleGET() {
   try {
@@ -23,7 +24,7 @@ async function handleGET() {
 
     return NextResponse.json(teams)
   } catch (error) {
-    console.error("Teams fetch error:", error)
+    captureApiError("Teams fetch error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -74,7 +75,7 @@ async function handlePOST(request: Request) {
 
     return NextResponse.json(team, { status: 201 })
   } catch (error) {
-    console.error("Team create error:", error)
+    captureApiError("Team create error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

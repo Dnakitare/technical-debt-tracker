@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getStripe } from "@/lib/stripe"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handlePOST() {
   try {
@@ -30,7 +31,7 @@ async function handlePOST() {
 
     return NextResponse.json({ url: session.url })
   } catch (error) {
-    console.error("Portal error:", error)
+    captureApiError("Portal error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

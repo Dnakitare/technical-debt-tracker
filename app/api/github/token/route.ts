@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createOctokit } from "@/lib/github"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handleGET() {
   try {
@@ -24,7 +25,7 @@ async function handleGET() {
       github_username: profile?.github_username ?? null,
     })
   } catch (error) {
-    console.error("GitHub token check error:", error)
+    captureApiError("GitHub token check error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -72,7 +73,7 @@ async function handlePOST(request: Request) {
       github_username: githubUsername,
     })
   } catch (error) {
-    console.error("GitHub token save error:", error)
+    captureApiError("GitHub token save error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -99,7 +100,7 @@ async function handleDELETE() {
 
     return NextResponse.json({ connected: false, github_username: null })
   } catch (error) {
-    console.error("GitHub token delete error:", error)
+    captureApiError("GitHub token delete error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

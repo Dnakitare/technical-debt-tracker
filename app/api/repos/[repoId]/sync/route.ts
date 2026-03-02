@@ -3,6 +3,7 @@ import { verifyRepoAccess } from "@/lib/auth-check"
 import { syncRepo } from "@/lib/sync-repo"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handlePOST(
   _request: Request,
@@ -57,7 +58,7 @@ async function handlePOST(
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("Sync error:", error)
+    captureApiError("Sync error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

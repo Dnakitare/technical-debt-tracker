@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { verifyRepoAccess, hasWriteAccess } from "@/lib/auth-check"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handleGET(
   _request: Request,
@@ -34,7 +35,7 @@ async function handleGET(
 
     return NextResponse.json(repo)
   } catch (error) {
-    console.error("Repo fetch error:", error)
+    captureApiError("Repo fetch error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -79,7 +80,7 @@ async function handleDELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Repo delete error:", error)
+    captureApiError("Repo delete error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

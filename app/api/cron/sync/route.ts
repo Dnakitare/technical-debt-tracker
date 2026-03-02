@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { syncRepo } from "@/lib/sync-repo"
 import { SYNC_INTERVALS, DEFAULT_HOURLY_RATE } from "@/lib/constants"
 import type { PlanKey } from "@/lib/constants"
+import { captureApiError } from "@/lib/api-error"
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
     `)
 
   if (reposError) {
-    console.error("Cron sync: failed to fetch repos", reposError)
+    captureApiError("Cron sync: failed to fetch repos", reposError)
     return NextResponse.json({ error: "Failed to fetch repos" }, { status: 500 })
   }
 

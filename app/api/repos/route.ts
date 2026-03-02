@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { connectRepoSchema } from "@/lib/validators"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handleGET() {
   try {
@@ -34,7 +35,7 @@ async function handleGET() {
 
     return NextResponse.json(repos)
   } catch (error) {
-    console.error("Repos fetch error:", error)
+    captureApiError("Repos fetch error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -98,7 +99,7 @@ async function handlePOST(request: Request) {
 
     return NextResponse.json(repo, { status: 201 })
   } catch (error) {
-    console.error("Repo create error:", error)
+    captureApiError("Repo create error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

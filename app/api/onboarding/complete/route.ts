@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handlePOST() {
   try {
@@ -25,7 +26,7 @@ async function handlePOST() {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Onboarding complete error:", error)
+    captureApiError("Onboarding complete error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

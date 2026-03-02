@@ -3,6 +3,7 @@ import { getTeamPlan, canExport, hasActiveSubscription } from "@/lib/plan-check"
 import { REPO_EXPORT_LIMIT, CSV_HEADER } from "@/lib/constants"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
+import { captureApiError } from "@/lib/api-error"
 
 async function handleGET(
   _request: Request,
@@ -75,7 +76,7 @@ async function handleGET(
       },
     })
   } catch (error) {
-    console.error("Export error:", error)
+    captureApiError("Export error", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
