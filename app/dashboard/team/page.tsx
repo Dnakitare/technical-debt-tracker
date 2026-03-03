@@ -4,6 +4,7 @@ import { Users, Mail } from "lucide-react"
 import { InviteMemberForm } from "@/components/team/invite-member-form"
 import { RemoveMemberButton } from "@/components/team/remove-member-button"
 import { CancelInviteButton } from "@/components/team/cancel-invite-button"
+import { RoleSelector } from "@/components/team/role-selector"
 
 interface MemberWithUser {
   id: string
@@ -123,9 +124,19 @@ export default async function TeamPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800 capitalize dark:bg-zinc-800 dark:text-zinc-300">
-                      {member.role}
-                    </span>
+                    {isAdminOrOwner ? (
+                      <RoleSelector
+                        teamId={teamId}
+                        userId={member.user_id}
+                        currentRole={member.role}
+                        isOwner={member.role === "owner"}
+                        callerRole={currentMember?.role ?? "member"}
+                      />
+                    ) : (
+                      <span className="inline-flex rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-800 capitalize dark:bg-zinc-800 dark:text-zinc-300">
+                        {member.role}
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-zinc-500">
                     {member.joined_at

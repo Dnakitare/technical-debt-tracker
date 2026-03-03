@@ -4,6 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { passwordSchema } from "@/lib/validators"
+import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator"
 import { toast } from "sonner"
 
 export default function RegisterPage() {
@@ -16,6 +18,12 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
+    const passwordResult = passwordSchema.safeParse(password)
+    if (!passwordResult.success) {
+      toast.error(passwordResult.error.issues[0].message)
+      return
+    }
+
     setLoading(true)
 
     const { data, error } = await supabase.auth.signUp({
@@ -142,10 +150,11 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
               className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
               placeholder="••••••••"
             />
+            <PasswordStrengthIndicator password={password} />
           </div>
           <button
             type="submit"

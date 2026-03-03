@@ -12,7 +12,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn().mockReturnValue(mockAdminClient),
 }))
 
-const { POST, DELETE } = await import("@/app/api/teams/[teamId]/members/route")
+const { POST, DELETE, PATCH } = await import("@/app/api/teams/[teamId]/members/route")
 
 function makeContext(teamId: string) {
   return { params: Promise.resolve({ teamId }) }
@@ -345,5 +345,202 @@ describe("DELETE /api/teams/[teamId]/members", () => {
 
     const body = await res.json()
     expect(body.success).toBe(true)
+  })
+})
+
+describe("PATCH /api/teams/[teamId]/members", () => {
+  const validBody = {
+    userId: "550e8400-e29b-41d4-a716-446655440000",
+    role: "member",
+  }
+
+  it("returns 401 when not authenticated", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: null,
+    })
+
+    const res = await PATCH(
+      new Request("http://localhost/api/teams/team-1/members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validBody),
+      }),
+      makeContext("team-1")
+    )
+    expect(res.status).toBe(401)
+  })
+
+  it("returns 403 when caller is not admin/owner", async () => {
+    mockSupabase.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: { role: "viewer" },
+        error: null,
+      }),
+    }))
+
+    const res = await PATCH(
+      new Request("http://localhost/api/teams/team-1/members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validBody),
+      }),
+      makeContext("team-1")
+    )
+    expect(res.status).toBe(403)
+    const body = await res.json()
+    expect(body.error).toBe("Forbidden")
+  })
+
+  it("returns 400 for invalid body", async () => {
+    mockSupabase.from.mockImplementationOnce(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: { role: "owner" },
+        error: null,
+      }),
+    }))
+
+    const res = await PATCH(
+      new Request("http://localhost/api/teams/team-1/members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: "not-a-uuid", role: "invalid" }),
+      }),
+      makeContext("team-1")
+    )
+    expect(res.status).toBe(400)
+  })
+
+  it("returns 403 when trying to change owner role", async () => {
+    let callCount = 0
+    mockSupabase.from.mockImplementation(() => {
+      callCount++
+      if (callCount === 1) {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: { role: "owner" },
+            error: null,
+          }),
+        }
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: { role: "owner" },
+          error: null,
+        }),
+      }
+    })
+
+    const res = await PATCH(
+      new Request("http://localhost/api/teams/team-1/members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validBody),
+      }),
+      makeContext("team-1")
+    )
+    expect(res.status).toBe(403)
+    const body = await res.json()
+    expect(body.error).toBe("Cannot change the owner's role")
+  })
+
+  it("returns 403 when admin tries to promote to admin", async () => {
+    let callCount = 0
+    mockSupabase.from.mockImplementation(() => {
+      callCount++
+      if (callCount === 1) {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: { role: "admin" },
+            error: null,
+          }),
+        }
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: { role: "member" },
+          error: null,
+        }),
+      }
+    })
+
+    const res = await PATCH(
+      new Request("http://localhost/api/teams/team-1/members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "550e8400-e29b-41d4-a716-446655440000",
+          role: "admin",
+        }),
+      }),
+      makeContext("team-1")
+    )
+    expect(res.status).toBe(403)
+    const body = await res.json()
+    expect(body.error).toBe("Only owners can promote to admin")
+  })
+
+  it("successfully updates member role as owner", async () => {
+    let callCount = 0
+    mockSupabase.from.mockImplementation(() => {
+      callCount++
+      if (callCount === 1) {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: { role: "owner" },
+            error: null,
+          }),
+        }
+      }
+      if (callCount === 2) {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: { role: "member" },
+            error: null,
+          }),
+        }
+      }
+      // update operation
+      const chain: Record<string, unknown> = {}
+      chain.update = vi.fn().mockReturnValue(chain)
+      chain.eq = vi.fn().mockReturnValue(chain)
+      Object.defineProperty(chain, "then", {
+        value: (resolve: (val: unknown) => void) => resolve({ error: null }),
+        configurable: true,
+      })
+      return chain
+    })
+
+    const res = await PATCH(
+      new Request("http://localhost/api/teams/team-1/members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "550e8400-e29b-41d4-a716-446655440000",
+          role: "admin",
+        }),
+      }),
+      makeContext("team-1")
+    )
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.success).toBe(true)
+    expect(body.role).toBe("admin")
   })
 })

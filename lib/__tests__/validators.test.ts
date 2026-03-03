@@ -4,6 +4,8 @@ import {
   createTeamSchema,
   inviteMemberSchema,
   updateSettingsSchema,
+  passwordSchema,
+  updateMemberRoleSchema,
 } from "../validators"
 
 describe("connectRepoSchema", () => {
@@ -132,5 +134,72 @@ describe("updateSettingsSchema", () => {
   it("accepts boundary hourlyRate values", () => {
     expect(updateSettingsSchema.safeParse({ hourlyRate: 0 }).success).toBe(true)
     expect(updateSettingsSchema.safeParse({ hourlyRate: 10000 }).success).toBe(true)
+  })
+})
+
+describe("passwordSchema", () => {
+  it("accepts a strong password", () => {
+    expect(passwordSchema.safeParse("StrongP1ss").success).toBe(true)
+  })
+
+  it("rejects password shorter than 8 characters", () => {
+    expect(passwordSchema.safeParse("Abc1").success).toBe(false)
+  })
+
+  it("rejects password without uppercase", () => {
+    expect(passwordSchema.safeParse("lowercase1").success).toBe(false)
+  })
+
+  it("rejects password without lowercase", () => {
+    expect(passwordSchema.safeParse("UPPERCASE1").success).toBe(false)
+  })
+
+  it("rejects password without number", () => {
+    expect(passwordSchema.safeParse("NoNumbers").success).toBe(false)
+  })
+
+  it("accepts exactly 8 characters", () => {
+    expect(passwordSchema.safeParse("Abcdef1x").success).toBe(true)
+  })
+})
+
+describe("updateMemberRoleSchema", () => {
+  it("accepts valid userId and role", () => {
+    const result = updateMemberRoleSchema.safeParse({
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      role: "admin",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("accepts all valid roles", () => {
+    const uuid = "550e8400-e29b-41d4-a716-446655440000"
+    expect(updateMemberRoleSchema.safeParse({ userId: uuid, role: "admin" }).success).toBe(true)
+    expect(updateMemberRoleSchema.safeParse({ userId: uuid, role: "member" }).success).toBe(true)
+    expect(updateMemberRoleSchema.safeParse({ userId: uuid, role: "viewer" }).success).toBe(true)
+  })
+
+  it("rejects invalid role", () => {
+    expect(
+      updateMemberRoleSchema.safeParse({
+        userId: "550e8400-e29b-41d4-a716-446655440000",
+        role: "owner",
+      }).success
+    ).toBe(false)
+  })
+
+  it("rejects non-UUID userId", () => {
+    expect(
+      updateMemberRoleSchema.safeParse({
+        userId: "not-a-uuid",
+        role: "member",
+      }).success
+    ).toBe(false)
+  })
+
+  it("rejects missing fields", () => {
+    expect(updateMemberRoleSchema.safeParse({}).success).toBe(false)
+    expect(updateMemberRoleSchema.safeParse({ userId: "550e8400-e29b-41d4-a716-446655440000" }).success).toBe(false)
+    expect(updateMemberRoleSchema.safeParse({ role: "admin" }).success).toBe(false)
   })
 })

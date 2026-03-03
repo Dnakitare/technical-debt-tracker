@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { inviteMemberSchema } from "@/lib/validators"
+import { inviteMemberSchema, updateMemberRoleSchema } from "@/lib/validators"
 import { NextResponse } from "next/server"
 import { withRateLimit } from "@/lib/with-rate-limit"
 import { captureApiError } from "@/lib/api-error"
@@ -197,5 +197,80 @@ async function handleDELETE(
   }
 }
 
+async function handlePATCH(
+  request: Request,
+  context: unknown
+) {
+  const { params } = context as { params: Promise<{ teamId: string }> }
+  try {
+    const { teamId } = await params
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Check caller is admin/owner
+    const { data: callerMember } = await supabase
+      .from("team_members")
+      .select("role")
+      .eq("team_id", teamId)
+      .eq("user_id", user.id)
+      .single()
+
+    if (!callerMember || !["owner", "admin"].includes(callerMember.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const parsed = updateMemberRoleSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+    }
+
+    const { userId, role } = parsed.data
+
+    // Check target member exists
+    const { data: targetMember } = await supabase
+      .from("team_members")
+      .select("role")
+      .eq("team_id", teamId)
+      .eq("user_id", userId)
+      .single()
+
+    if (!targetMember) {
+      return NextResponse.json({ error: "Member not found" }, { status: 404 })
+    }
+
+    // Cannot change owner role
+    if (targetMember.role === "owner") {
+      return NextResponse.json({ error: "Cannot change the owner's role" }, { status: 403 })
+    }
+
+    // Admins cannot promote to admin (only owners can)
+    if (callerMember.role === "admin" && role === "admin") {
+      return NextResponse.json({ error: "Only owners can promote to admin" }, { status: 403 })
+    }
+
+    const { error } = await supabase
+      .from("team_members")
+      .update({ role })
+      .eq("team_id", teamId)
+      .eq("user_id", userId)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, role })
+  } catch (error) {
+    captureApiError("Member role update error", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
 export const POST = withRateLimit(handlePOST, "api")
 export const DELETE = withRateLimit(handleDELETE, "api")
+export const PATCH = withRateLimit(handlePATCH, "api")

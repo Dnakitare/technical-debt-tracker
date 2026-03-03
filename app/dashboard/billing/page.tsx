@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { PLANS } from "@/lib/constants"
 import { PricingCards } from "@/components/billing/pricing-cards"
+import { SubscriptionStatusBanner } from "@/components/billing/subscription-status-banner"
 
 export const metadata: Metadata = { title: "Billing" }
 
@@ -22,6 +23,23 @@ export default async function BillingPage() {
         .eq("id", profile.current_team_id)
         .single()
     : { data: null }
+
+  // Query current repo + member counts for downgrade warnings
+  const teamId = profile?.current_team_id ?? ""
+
+  const { count: repoCount } = teamId
+    ? await supabase
+        .from("repositories")
+        .select("*", { count: "exact", head: true })
+        .eq("team_id", teamId)
+    : { count: 0 }
+
+  const { count: memberCount } = teamId
+    ? await supabase
+        .from("team_members")
+        .select("*", { count: "exact", head: true })
+        .eq("team_id", teamId)
+    : { count: 0 }
 
   return (
     <div>
@@ -56,10 +74,16 @@ export default async function BillingPage() {
         </div>
       )}
 
-      <PricingCards
-        currentPlan={team?.plan ?? "free"}
-        teamId={team?.id ?? ""}
-      />
+      <SubscriptionStatusBanner status={team?.subscription_status ?? null} />
+
+      <div className="mt-6">
+        <PricingCards
+          currentPlan={team?.plan ?? "free"}
+          teamId={team?.id ?? ""}
+          currentRepoCount={repoCount ?? 0}
+          currentMemberCount={memberCount ?? 0}
+        />
+      </div>
     </div>
   )
 }

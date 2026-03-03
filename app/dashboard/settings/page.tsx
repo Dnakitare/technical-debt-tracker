@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useSearchParams } from "next/navigation"
+import { AlertTriangle } from "lucide-react"
 
 export default function SettingsPage() {
   const [fullName, setFullName] = useState("")
@@ -18,6 +19,10 @@ export default function SettingsPage() {
   const [githubToken, setGithubToken] = useState("")
   const [githubLoading, setGithubLoading] = useState(false)
   const [githubChecking, setGithubChecking] = useState(true)
+
+  // Account deletion state
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   // Slack connection state
   const [slackConnected, setSlackConnected] = useState(false)
@@ -160,6 +165,25 @@ export default function SettingsPage() {
       toast.error("Failed to disconnect Slack")
     } finally {
       setSlackLoading(false)
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmation !== "DELETE") return
+    setDeleteLoading(true)
+
+    try {
+      const res = await fetch("/api/account", { method: "DELETE" })
+      if (res.ok) {
+        window.location.href = "/login"
+      } else {
+        const data = await res.json()
+        toast.error(data.error ?? "Failed to delete account")
+      }
+    } catch {
+      toast.error("Failed to delete account")
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -349,6 +373,45 @@ export default function SettingsPage() {
             </a>
           </div>
         )}
+      </div>
+
+      {/* Danger Zone */}
+      <div className="mt-8 max-w-lg rounded-xl border border-red-300 bg-white p-6 dark:border-red-800 dark:bg-zinc-900">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-red-600" />
+          <h2 className="text-lg font-semibold text-red-600">
+            Danger Zone
+          </h2>
+        </div>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          Permanently delete your account and all associated data. This action
+          cannot be undone.
+        </p>
+        <div className="mt-4 space-y-3">
+          <div>
+            <label
+              htmlFor="delete-confirm"
+              className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              Type <span className="font-mono font-bold">DELETE</span> to confirm
+            </label>
+            <input
+              id="delete-confirm"
+              type="text"
+              value={deleteConfirmation}
+              onChange={(e) => setDeleteConfirmation(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50"
+              placeholder="DELETE"
+            />
+          </div>
+          <button
+            onClick={handleDeleteAccount}
+            disabled={deleteConfirmation !== "DELETE" || deleteLoading}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {deleteLoading ? "Deleting..." : "Delete Account"}
+          </button>
+        </div>
       </div>
     </div>
   )
